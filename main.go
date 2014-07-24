@@ -418,7 +418,10 @@ func main() {
 	c.Dir = "/"
 	c.Stdin = stdin
 	buf, err = c.CombinedOutput()
-	fmt.Printf("output: %s\n", buf)
+	if err != nil {
+		fmt.Printf("err: %s\n", buf)
+		os.Exit(1)
+	}
 	stdin.Reset()
 	timeTrack(start, "fdisk")
 
@@ -491,7 +494,10 @@ func main() {
 	c.Dir = "/"
 	c.SysProcAttr = attr
 	buf, err = c.CombinedOutput()
-	fmt.Printf("err : %s output: %s\n", err, buf)
+	if err != nil {
+		fmt.Printf("err : %s output: %s\n", err, buf)
+		os.Exit(1)
+	}
 	timeTrack(start, "resize2fs")
 
 	start = time.Now()
@@ -507,7 +513,10 @@ func main() {
 	c.Stdin = stdin
 	c.SysProcAttr = attr
 	buf, err = c.CombinedOutput()
-	fmt.Printf("err: %s output: %s\n", err, buf)
+	if err != nil {
+		fmt.Printf("err: %s output: %s\n", err, buf)
+		os.Exit(1)
+	}
 	stdin.Reset()
 	timeTrack(start, "chpasswd")
 
