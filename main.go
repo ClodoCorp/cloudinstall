@@ -544,7 +544,6 @@ func main() {
 	start = time.Now()
 	syscall.Sync()
 	timeTrack(start, "sync")
-	time.Sleep(50 * time.Second)
 
 	start = time.Now()
 	syscall.Reboot(syscall.LINUX_REBOOT_CMD_POWER_OFF)
