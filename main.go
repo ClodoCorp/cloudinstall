@@ -115,7 +115,7 @@ func network() {
 		}
 	}
 	fmt.Printf("hold some time to get interfaces up\n")
-	time.Sleep(5 * time.Second)
+	time.Sleep(2 * time.Second)
 
 	ifaces, err = net.Interfaces()
 	if err != nil {
@@ -186,7 +186,6 @@ func network() {
 					os.Exit(1)
 				}
 				opts := packet.ParseOptions()
-				fmt.Printf("dhcp options: %+v\n", opts)
 				err = netlink.NetworkLinkAddIp(&iface, packet.YIAddr(), &net.IPNet{
 					IP:   packet.YIAddr(),
 					Mask: net.IPMask(opts[dhcp4.OptionSubnetMask]),
@@ -210,17 +209,18 @@ func network() {
 		}
 	}
 
-	fmt.Printf("configured interfaces\n")
-	ifaces, err = net.Interfaces()
-	if err == nil {
-		for _, iface := range ifaces {
-			addrs, _ := iface.Addrs()
-			for _, addr := range addrs {
-				fmt.Printf("iface %s addr: %s\n", iface.Name, addr)
+	/*
+		fmt.Printf("configured interfaces\n")
+		ifaces, err = net.Interfaces()
+		if err == nil {
+			for _, iface := range ifaces {
+				addrs, _ := iface.Addrs()
+				for _, addr := range addrs {
+					fmt.Printf("iface %s addr: %s\n", iface.Name, addr)
+				}
 			}
 		}
-	}
-	time.Sleep(5 * time.Second)
+	*/
 }
 
 func init() {
@@ -374,8 +374,6 @@ func main() {
 			fmt.Printf("failed to install: %s\n", err.Error())
 			r.Close()
 			w.Close()
-			time.Sleep(10 * time.Minute)
-			//			os.Exit(1)
 		}
 		w.Close()
 		timeTrack(start, "copy")
@@ -445,7 +443,6 @@ func main() {
 	fmt.Printf("update partition table\n")
 	if blkpart("/dev/sda") != nil {
 		fmt.Printf("failed to update partition table: %s\n", err.Error())
-		time.Sleep(10 * time.Minute)
 		os.Exit(1)
 	}
 
@@ -535,6 +532,8 @@ func main() {
 	start = time.Now()
 	syscall.Sync()
 	timeTrack(start, "sync")
+	time.Sleep(50 * time.Second)
+
 	start = time.Now()
 	syscall.Reboot(syscall.LINUX_REBOOT_CMD_POWER_OFF)
 	timeTrack(start, "poweroff")
@@ -547,7 +546,7 @@ func lookupPath(prog string) (string, error) {
 		path := filepath.Join("/mnt", p, prog)
 		_, err = os.Stat(path)
 		if err == nil {
-			return path, nil
+			return filepath.Join(p, prog), nil
 		}
 		continue
 	}
