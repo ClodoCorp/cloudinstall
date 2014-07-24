@@ -388,24 +388,25 @@ func main() {
 		fmt.Printf("failed to update partition table: %s\n", err.Error())
 		os.Exit(1)
 	}
+	/*
+		fmt.Printf("mount dev to mnt\n")
+		start = time.Now()
+		err = syscall.Mount("/dev/sda1", "/mnt", "ext4", syscall.MS_RELATIME, "data=writeback,barrier=0")
+		if err != nil {
+			fmt.Printf("failed to mount: %s\n", err.Error())
+			os.Exit(1)
+		}
+		timeTrack(start, "mount /mnt")
 
-	fmt.Printf("mount dev to mnt\n")
-	start = time.Now()
-	err = syscall.Mount("/dev/sda1", "/mnt", "ext4", syscall.MS_RELATIME, "data=writeback,barrier=0")
-	if err != nil {
-		fmt.Printf("failed to mount: %s\n", err.Error())
-		os.Exit(1)
-	}
-	timeTrack(start, "mount /mnt")
-
-	fmt.Printf("mount devtmpfs\n")
-	start = time.Now()
-	err = syscall.Mount("devtmpfs", "/mnt/dev", "devtmpfs", 0, "mode=0755")
-	if err != nil {
-		fmt.Printf("failed to mount /mnt/dev: %s\n", err.Error())
-		os.Exit(1)
-	}
-	timeTrack(start, "mount /mnt/dev")
+		fmt.Printf("mount devtmpfs\n")
+		start = time.Now()
+		err = syscall.Mount("devtmpfs", "/mnt/dev", "devtmpfs", 0, "mode=0755")
+		if err != nil {
+			fmt.Printf("failed to mount /mnt/dev: %s\n", err.Error())
+			os.Exit(1)
+		}
+		timeTrack(start, "mount /mnt/dev")
+	*/
 
 	attr := &syscall.SysProcAttr{Chroot: "/mnt"}
 	var buf []byte
@@ -425,23 +426,25 @@ func main() {
 	stdin.Reset()
 	timeTrack(start, "fdisk")
 
-	fmt.Printf("unmount /mnt/dev\n")
-	start = time.Now()
-	err = syscall.Unmount("/mnt/dev", syscall.MNT_DETACH)
-	if err != nil {
-		fmt.Printf("failed to mount: %s\n", err.Error())
-		os.Exit(1)
-	}
-	timeTrack(start, "umount /mnt/dev")
+	/*
+		fmt.Printf("unmount /mnt/dev\n")
+		start = time.Now()
+		err = syscall.Unmount("/mnt/dev", syscall.MNT_DETACH)
+		if err != nil {
+			fmt.Printf("failed to mount: %s\n", err.Error())
+			os.Exit(1)
+		}
+		timeTrack(start, "umount /mnt/dev")
 
-	fmt.Printf("unmount /mnt\n")
-	start = time.Now()
-	err = syscall.Unmount("/mnt", syscall.MNT_DETACH)
-	if err != nil {
-		fmt.Printf("failed to mount: %s\n", err.Error())
-		os.Exit(1)
-	}
-	timeTrack(start, "umount /mnt")
+		fmt.Printf("unmount /mnt\n")
+		start = time.Now()
+		err = syscall.Unmount("/mnt", syscall.MNT_DETACH)
+		if err != nil {
+			fmt.Printf("failed to mount: %s\n", err.Error())
+			os.Exit(1)
+		}
+		timeTrack(start, "umount /mnt")
+	*/
 
 	fmt.Printf("update partition table\n")
 	if blkpart("/dev/sda") != nil {
