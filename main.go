@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -61,6 +62,8 @@ func (r *ProgressReader) Read(p []byte) (int, error) {
 }
 
 func network() {
+	defer timeTrack(time.Now(), "network")
+
 	var cmdline_iface string = "all"
 	var cmdline_mode string
 
@@ -221,6 +224,7 @@ func network() {
 }
 
 func init() {
+	defer timeTrack(time.Now(), "init")
 	var err error
 	err = os.Mkdir("/proc", 0755)
 	if err != nil {
@@ -265,6 +269,7 @@ func init() {
 }
 
 func blkpart(dev string) error {
+	defer timeTrack(time.Now(), "blkpart")
 	BLKRRPART := _IO(0x12, 95)
 
 	w, err := os.OpenFile(dev, os.O_WRONLY, 0600)
@@ -280,6 +285,11 @@ func blkpart(dev string) error {
 		return err
 	}
 	return nil
+}
+
+func timeTrack(start time.Time, name string) {
+	elapsed := time.Since(start)
+	log.Printf("%s took %s", name, elapsed)
 }
 
 func main() {
@@ -308,29 +318,35 @@ func main() {
 	v.Set("auth_password", "3jJf20m02B")
 	v.Set("action", "get_root_password")
 	v.Set("yaml", "1")
-	//	v.Set("vps", "484")
 	if uuid, err := ioutil.ReadFile("/sys/class/dmi/id/product_uuid"); err == nil {
 		v.Set("uuid", fmt.Sprintf("%s", uuid))
 	}
 
+	var start time.Time
+
 	for {
 		fmt.Printf("post auth data\n")
+		start = time.Now()
 		res, err = client.PostForm(authurl, v)
 		if err != nil {
 			fmt.Printf("failed to get data: %s\n", err.Error())
 			continue
 		}
+		timeTrack(start, "auth")
 
 		fmt.Printf("get install data\n")
+		start = time.Now()
 		buf, err := ioutil.ReadAll(res.Body)
 		err = yaml.Unmarshal(buf, &conf)
 		if err != nil {
 			fmt.Printf("failed to get data: %s\n", err.Error())
 			continue
 		}
+		timeTrack(start, "config")
 
 		fetch := fmt.Sprintf("%s/%s-%s-%s", conf.Bootstrap.Fetch[0], conf.Bootstrap.Name, conf.Bootstrap.Version, conf.Bootstrap.Arch)
 		fmt.Printf("install from: %s\n", fetch)
+		start = time.Now()
 		res, err = client.Get(fetch)
 		if err != nil {
 			fmt.Printf("failed to get data: %s\n", err.Error())
@@ -362,63 +378,69 @@ func main() {
 			//			os.Exit(1)
 		}
 		w.Close()
+		timeTrack(start, "copy")
 		fmt.Printf("install complete\n")
 
 		break
 	}
 
 	fmt.Printf("update partition table\n")
+
 	if blkpart("/dev/sda") != nil {
 		fmt.Printf("failed to update partition table: %s\n", err.Error())
-		time.Sleep(10 * time.Minute)
 		os.Exit(1)
 	}
 
 	fmt.Printf("mount dev to mnt\n")
+	start = time.Now()
 	err = syscall.Mount("/dev/sda1", "/mnt", "ext4", syscall.MS_RELATIME, "data=writeback,barrier=0")
 	if err != nil {
 		fmt.Printf("failed to mount: %s\n", err.Error())
-		time.Sleep(10 * time.Minute)
 		os.Exit(1)
 	}
+	timeTrack(start, "mount /mnt")
 
 	fmt.Printf("mount devtmpfs\n")
+	start = time.Now()
 	err = syscall.Mount("devtmpfs", "/mnt/dev", "devtmpfs", 0, "mode=0755")
 	if err != nil {
 		fmt.Printf("failed to mount /mnt/dev: %s\n", err.Error())
-		time.Sleep(10 * time.Minute)
 		os.Exit(1)
 	}
+	timeTrack(start, "mount /mnt/dev")
 
 	attr := &syscall.SysProcAttr{Chroot: "/mnt"}
 	var buf []byte
 
 	fmt.Printf("run fdisk\n")
+	start = time.Now()
 	stdin := new(bytes.Buffer)
 	stdin.Write([]byte("o\nn\np\n1\n2048\n\nw\n"))
-	//for _, p := range []string{"/sbin", "/usr/sbin"} {
 	c = exec.Command("/bin/busybox", "fdisk", "-u", "/dev/sda")
 	c.Dir = "/"
 	c.Stdin = stdin
-	//		c.SysProcAttr = attr
 	buf, err = c.CombinedOutput()
 	fmt.Printf("output: %s\n", buf)
 	stdin.Reset()
-	//}
+	timeTrack(start, "fdisk")
+
 	fmt.Printf("unmount /mnt/dev\n")
+	start = time.Now()
 	err = syscall.Unmount("/mnt/dev", syscall.MNT_DETACH)
 	if err != nil {
 		fmt.Printf("failed to mount: %s\n", err.Error())
-		time.Sleep(10 * time.Minute)
 		os.Exit(1)
 	}
+	timeTrack(start, "umount /mnt/dev")
+
 	fmt.Printf("unmount /mnt\n")
+	start = time.Now()
 	err = syscall.Unmount("/mnt", syscall.MNT_DETACH)
 	if err != nil {
 		fmt.Printf("failed to mount: %s\n", err.Error())
-		time.Sleep(10 * time.Minute)
 		os.Exit(1)
 	}
+	timeTrack(start, "umount /mnt")
 
 	fmt.Printf("update partition table\n")
 	if blkpart("/dev/sda") != nil {
@@ -428,31 +450,38 @@ func main() {
 	}
 
 	fmt.Printf("mount dev to /mnt\n")
+	start = time.Now()
 	err = syscall.Mount("/dev/sda1", "/mnt", "ext4", syscall.MS_RELATIME, "data=writeback,barrier=0")
 	if err != nil {
 		fmt.Printf("failed to mount: %s\n", err.Error())
-		time.Sleep(10 * time.Minute)
 		os.Exit(1)
 	}
+	timeTrack(start, "mount /mnt")
 
 	fmt.Printf("mount devtmpfs\n")
+	start = time.Now()
 	err = syscall.Mount("devtmpfs", "/mnt/dev", "devtmpfs", 0, "mode=0755")
 	if err != nil {
 		fmt.Printf("failed to mount /mnt/dev: %s\n", err.Error())
-		time.Sleep(10 * time.Minute)
 		os.Exit(1)
 	}
+	timeTrack(start, "mount /mnt/dev")
 
+	start = time.Now()
 	err = syscall.Mount("proc", "/mnt/proc", "proc", 0, "")
 	if err != nil {
 		fmt.Printf("failed to mount /mnt/proc: %s\n", err.Error())
 		os.Exit(1)
 	}
+	timeTrack(start, "mount /mnt/proc")
+
+	start = time.Now()
 	err = syscall.Mount("sys", "/mnt/sys", "sysfs", 0, "")
 	if err != nil {
 		fmt.Printf("failed to mount /sys: %s\n", err.Error())
 		os.Exit(1)
 	}
+	timeTrack(start, "mount /mnt/sys")
 
 	fmt.Printf("resize2fs dev\n")
 	resize2fs, err := lookupPath("resize2fs")
@@ -460,12 +489,15 @@ func main() {
 		fmt.Printf("fail %s", err)
 		os.Exit(1)
 	}
+	start = time.Now()
 	c = exec.Command(resize2fs, "/dev/sda1")
 	c.Dir = "/"
 	c.SysProcAttr = attr
 	buf, err = c.CombinedOutput()
 	fmt.Printf("err : %s output: %s\n", err, buf)
+	timeTrack(start, "resize2fs")
 
+	start = time.Now()
 	chpasswd, err := lookupPath("chpasswd")
 	if err != nil {
 		fmt.Printf("fail %s", err)
@@ -480,29 +512,36 @@ func main() {
 	buf, err = c.CombinedOutput()
 	fmt.Printf("err: %s output: %s\n", err, buf)
 	stdin.Reset()
+	timeTrack(start, "chpasswd")
 
 	fmt.Printf("unmount /mnt/dev\n")
+	start = time.Now()
 	err = syscall.Unmount("/mnt/dev", syscall.MNT_DETACH)
 	if err != nil {
 		fmt.Printf("failed to mount: %s\n", err.Error())
-		time.Sleep(10 * time.Minute)
 		os.Exit(1)
 	}
+	timeTrack(start, "umount /mnt/dev")
+
 	fmt.Printf("unmount /mnt\n")
+	start = time.Now()
 	err = syscall.Unmount("/mnt", syscall.MNT_DETACH)
 	if err != nil {
 		fmt.Printf("failed to mount: %s\n", err.Error())
-		time.Sleep(10 * time.Minute)
 		os.Exit(1)
 	}
+	timeTrack(start, "umount /mnt")
 
+	start = time.Now()
 	syscall.Sync()
-	//	syscall.Reboot(syscall.LINUX_REBOOT_CMD_RESTART2)
+	timeTrack(start, "sync")
+	start = time.Now()
 	syscall.Reboot(syscall.LINUX_REBOOT_CMD_POWER_OFF)
-	stdin.Reset()
+	timeTrack(start, "poweroff")
 }
 
 func lookupPath(prog string) (string, error) {
+	defer timeTrack(time.Now(), "lookupPath")
 	err := fmt.Errorf("failed to get path for %s", prog)
 	for _, p := range []string{"/sbin", "/usr/sbin"} {
 		path := filepath.Join("/mnt", p, prog)
