@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -453,32 +454,32 @@ func main() {
 		os.Exit(1)
 	}
 
-	for _, p := range []string{"/sbin", "/usr/sbin"} {
-		/*
-			fmt.Printf("fsck dev\n")
-			c = exec.Command(p+"/fsck -fy", "/dev/sda1")
-			c.Dir = "/"
-			c.SysProcAttr = attr
-			buf, err = c.CombinedOutput()
-			fmt.Printf("err : %s output: %s\n", err, buf)
-		*/
-		fmt.Printf("resize2fs dev\n")
-		c = exec.Command(p+"/resize2fs", "/dev/sda1")
-		c.Dir = "/"
-		c.SysProcAttr = attr
-		buf, err = c.CombinedOutput()
-		fmt.Printf("err : %s output: %s\n", err, buf)
-
-		fmt.Printf("set root password\n")
-		stdin.Write([]byte("root:" + conf.Users[0].Passwd))
-		c = exec.Command(p+"/chpasswd", "-e")
-		c.Dir = "/"
-		c.Stdin = stdin
-		c.SysProcAttr = attr
-		buf, err = c.CombinedOutput()
-		fmt.Printf("err: %s output: %s\n", err, buf)
-		stdin.Reset()
+	fmt.Printf("resize2fs dev\n")
+	resize2fs, err := lookupPath("resize2fs")
+	if err != nil {
+		fmt.Printf("fail %s", err)
+		os.Exit(1)
 	}
+	c = exec.Command(resize2fs, "/dev/sda1")
+	c.Dir = "/"
+	c.SysProcAttr = attr
+	buf, err = c.CombinedOutput()
+	fmt.Printf("err : %s output: %s\n", err, buf)
+
+	chpasswd, err := lookupPath("chpasswd")
+	if err != nil {
+		fmt.Printf("fail %s", err)
+		os.Exit(1)
+	}
+	fmt.Printf("set root password\n")
+	stdin.Write([]byte("root:" + conf.Users[0].Passwd))
+	c = exec.Command(chpasswd, "-e")
+	c.Dir = "/"
+	c.Stdin = stdin
+	c.SysProcAttr = attr
+	buf, err = c.CombinedOutput()
+	fmt.Printf("err: %s output: %s\n", err, buf)
+	stdin.Reset()
 
 	fmt.Printf("unmount /mnt/dev\n")
 	err = syscall.Unmount("/mnt/dev", syscall.MNT_DETACH)
@@ -499,4 +500,17 @@ func main() {
 	//	syscall.Reboot(syscall.LINUX_REBOOT_CMD_RESTART2)
 	syscall.Reboot(syscall.LINUX_REBOOT_CMD_POWER_OFF)
 	stdin.Reset()
+}
+
+func lookupPath(prog string) (string, error) {
+	err := fmt.Errorf("failed to get path for %s", prog)
+	for _, p := range []string{"/sbin", "/usr/sbin"} {
+		path := filepath.Join("/mnt", p, prog)
+		_, err = os.Stat(path)
+		if err == nil {
+			return path, nil
+		}
+		continue
+	}
+	return "", err
 }
