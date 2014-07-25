@@ -24,5 +24,7 @@ type Ec2 struct {
 }
 
 type DataSource struct {
-	Ec2 Ec2 `yaml:"Ec2,omitempty"`
+	Datasource struct {
+		Ec2 Ec2 `yaml:"Ec2,omitempty"`
+	} `yaml:"datasource"`
 }

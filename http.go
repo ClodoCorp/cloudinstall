@@ -9,7 +9,7 @@ import (
 	"gopkg.in/yaml.v1"
 )
 
-func getDataSource() (dataSource *DataSource, err error) {
+func getDataSource() (dataSource DataSource, err error) {
 	httpTransport := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
@@ -42,7 +42,7 @@ func getDataSource() (dataSource *DataSource, err error) {
 	return
 }
 
-func getCloudConfig(dataSource *DataSource) (cloudConfig *CloudConfig, err error) {
+func getCloudConfig(dataSource DataSource) (cloudConfig CloudConfig, err error) {
 	httpTransport := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
@@ -50,7 +50,7 @@ func getCloudConfig(dataSource *DataSource) (cloudConfig *CloudConfig, err error
 	var res *http.Response
 	var buffer []byte
 
-	for _, metadataUrl := range dataSource.Ec2.MetadataUrls {
+	for _, metadataUrl := range dataSource.Datasource.Ec2.MetadataUrls {
 		res, err = httpClient.Get(metadataUrl)
 		if err != nil {
 			continue

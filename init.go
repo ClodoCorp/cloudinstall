@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 	"syscall"
-	"time"
 )
 
 var (
@@ -15,7 +14,6 @@ var (
 )
 
 func init() {
-	defer timeTrack(time.Now(), "init")
 	var err error
 	err = os.Mkdir("/proc", 0755)
 	if err != nil {

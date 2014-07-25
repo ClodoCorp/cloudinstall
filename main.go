@@ -9,6 +9,7 @@ import (
 )
 
 func main() {
+	dst := "/dev/sda"
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -21,36 +22,42 @@ func main() {
 	err = configNetwork()
 	exit_fail(err)
 
+	fmt.Printf("get DataSource\n")
 	dataSource, err := getDataSource()
 	exit_fail(err)
 
+	fmt.Printf("%+v\n", dataSource)
+
+	fmt.Printf("get CloudConfig\n")
 	cloudConfig, err := getCloudConfig(dataSource)
 	exit_fail(err)
 
+	fmt.Printf("%+v\n", cloudConfig)
+
 	for _, srv := range cloudConfig.Bootstrap.Fetch {
 		src := fmt.Sprintf("%s/%s-%s-%s", srv, cloudConfig.Bootstrap.Name, cloudConfig.Bootstrap.Version, cloudConfig.Bootstrap.Arch)
-		dst := "/dev/sda"
 
+		fmt.Printf("copy image %s %s\n", src, dst)
 		err = copyImage(src, dst)
 		if err != nil {
 			continue
 		}
 	}
 
-	exit_fail(blkpart("/dev/sda"))
+	exit_fail(blkpart(dst))
 
 	chroot := &syscall.SysProcAttr{Chroot: "/mnt"}
 
 	stdin := new(bytes.Buffer)
 	stdin.Write([]byte("o\nn\np\n1\n2048\n\nw\n"))
-	c = exec.Command("/bin/busybox", "fdisk", "-u", "/dev/sda")
+	c = exec.Command("/bin/busybox", "fdisk", "-u", dst)
 	c.Dir = "/"
 	c.Stdin = stdin
 	_, err = c.CombinedOutput()
 	exit_fail(err)
 	stdin.Reset()
 
-	exit_fail(blkpart("/dev/sda"))
+	exit_fail(blkpart(dst))
 
 	exit_fail(mount("/dev/sda1", "/mnt", "ext4", syscall.MS_RELATIME, "data=writeback,barrier=0"))
 
