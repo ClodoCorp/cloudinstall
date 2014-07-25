@@ -51,7 +51,7 @@ func getCloudConfig(dataSource DataSource) (cloudConfig CloudConfig, err error) 
 	var buffer []byte
 
 	for _, metadataUrl := range dataSource.Datasource.Ec2.MetadataUrls {
-		res, err = httpClient.Get(metadataUrl)
+		res, err = httpClient.Get(metadataUrl + "&action=install")
 		if err != nil {
 			continue
 		}
@@ -65,7 +65,7 @@ func getCloudConfig(dataSource DataSource) (cloudConfig CloudConfig, err error) 
 		if err != nil {
 			continue
 		}
-		return
+		return cloudConfig, nil
 	}
 	return
 }

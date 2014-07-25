@@ -26,13 +26,9 @@ func main() {
 	dataSource, err := getDataSource()
 	exit_fail(err)
 
-	fmt.Printf("%+v\n", dataSource)
-
 	fmt.Printf("get CloudConfig\n")
 	cloudConfig, err := getCloudConfig(dataSource)
 	exit_fail(err)
-
-	fmt.Printf("%+v\n", cloudConfig)
 
 	for _, srv := range cloudConfig.Bootstrap.Fetch {
 		src := fmt.Sprintf("%s/%s-%s-%s", srv, cloudConfig.Bootstrap.Name, cloudConfig.Bootstrap.Version, cloudConfig.Bootstrap.Arch)

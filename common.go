@@ -37,9 +37,9 @@ func sync() {
 }
 
 func fatalf(format string, v ...interface{}) {
-	fmt.Printf(format, v...)
-	//	fmt.Fprintf(os.Stdout, format, v...)
-	//	os.Exit(1)
+	//	fmt.Printf(format, v...)
+	fmt.Fprintf(os.Stdout, format, v...)
+	os.Exit(1)
 }
 
 func exit_fail(err error) {

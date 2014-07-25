@@ -1,8 +1,8 @@
 package main
 
 type User struct {
-	Name   string `yaml:"name"`
-	Passwd string `yaml:"passwd"`
+	Name   string `yaml:"name,omitempty"`
+	Passwd string `yaml:"passwd,omitempty"`
 }
 
 type Bootstrap struct {
