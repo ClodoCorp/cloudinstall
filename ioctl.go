@@ -1,5 +1,12 @@
 package main
 
+import (
+	"errors"
+	"os"
+	"syscall"
+	"unsafe"
+)
+
 const (
 	_IOC_NONE  = 0x0
 	_IOC_WRITE = 0x1
@@ -40,4 +47,30 @@ func _IOWR(t int, nr int, size int) int {
 
 func _IO(t int, nr int) int {
 	return _IOC(_IOC_NONE, t, nr, 0)
+}
+
+func ioctl(fd uintptr, name int, data unsafe.Pointer) error {
+	_, _, err := syscall.RawSyscall(syscall.SYS_IOCTL, fd, uintptr(name), uintptr(data))
+	if err != 0 {
+		return errors.New("failed to run ioctl")
+	}
+	return nil
+}
+
+func blkpart(dev string) error {
+	BLKRRPART := _IO(0x12, 95)
+
+	w, err := os.OpenFile(dev, os.O_WRONLY, 0600)
+	if err != nil {
+		return err
+	}
+	defer w.Close()
+
+	var r int
+	// TODO: firstly send BLKPG, if it fails send BLKRRPART
+	err = ioctl(uintptr(w.Fd()), BLKRRPART, unsafe.Pointer(&r))
+	if err != nil {
+		return err
+	}
+	return nil
 }
