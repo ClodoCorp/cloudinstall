@@ -10,6 +10,7 @@ type Bootstrap struct {
 	Arch    string   `yaml:"arch"`
 	Fetch   []string `yaml:"fetch"`
 	Version string   `yaml:"version"`
+	Resize  bool     `yaml:"resize,omitempty"`
 }
 
 type CloudConfig struct {
