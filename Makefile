@@ -11,7 +11,7 @@ build:
 	touch "$${tmp}/etc/resolv.conf" ;\
 	cp busybox-static "$${tmp}/bin/busybox" ;\
 	CGO_ENABLED=0 go build -a -ldflags '-s' -o "$${tmp}/init" ;\
-	cp vmlinuz-3.14.12 "$(CURDIR)/output/kernel" ;\
+	cp vmlinuz-* "$(CURDIR)/output/kernel" ;\
 	pushd "$${tmp}/" >/dev/null;\
 	find . | cpio -H newc -o 2>/dev/null | gzip > "$(CURDIR)/output/initrd";\
 	popd >/dev/null
