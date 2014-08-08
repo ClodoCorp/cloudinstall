@@ -118,5 +118,5 @@ func main() {
 	}
 	sync()
 
-	reboot()
+	//	reboot()
 }
