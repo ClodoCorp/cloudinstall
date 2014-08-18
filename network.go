@@ -36,15 +36,25 @@ func configNetwork() (err error) {
 			cmdline_ifaces = append(cmdline_ifaces, iface.Name)
 		}
 	}
+	var err4, err6 error
 
 	if cmdline_mode == "auto4" || cmdline_mode == "dhcp4" {
-		exit_fail(networkAuto4(cmdline_ifaces))
+		err4 = networkAuto4(cmdline_ifaces)
+	}
+	if debug && err4 != nil {
+		fmt.Printf("ipv4 error: %s\n", err4.Error())
 	}
 
 	if cmdline_mode == "auto6" || cmdline_mode == "dhcp6" {
-		exit_fail(networkAuto6(cmdline_ifaces))
+		err6 = networkAuto6(cmdline_ifaces)
+	}
+	if debug && err6 != nil {
+		fmt.Printf("ipv6 error: %s\n", err6.Error())
 	}
 
+	if err4 != nil && err6 != nil {
+		return fmt.Errorf(err4.Error() + err6.Error())
+	}
 	return
 }
 
@@ -96,7 +106,7 @@ func networkAuto6(ifaces []string) (err error) {
 }
 
 func networkAuto4(ifaces []string) (err error) {
-	err = fmt.Errorf("failed to configure ipv6")
+	err = fmt.Errorf("failed to configure ipv4")
 	for _, ifname := range ifaces {
 
 		iface, err := net.InterfaceByName(ifname)

@@ -10,7 +10,6 @@ import (
 
 var (
 	cmdline []string
-	debug   bool
 )
 
 func init() {
@@ -31,8 +30,6 @@ func init() {
 		os.Exit(1)
 	}
 	cmdline = strings.Split(strings.TrimSpace(string(buf)), " ")
-
-	debug, _, _ = cmdlineVar("debug")
 
 	err = os.Mkdir("/sys", 0755)
 	if err != nil {

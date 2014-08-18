@@ -24,3 +24,12 @@ func cmdlineVar(key string) (ok bool, value string, err error) {
 	}
 	return
 }
+
+func cmdlineBool(key string) (ok bool) {
+	for _, token := range cmdline {
+		if token == key {
+			return true
+		}
+	}
+	return false
+}
