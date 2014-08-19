@@ -47,6 +47,7 @@ Network:
 		break Network
 	}
 
+Disk:
 	for _, srv := range cloudConfig.Bootstrap.Fetch {
 		src := fmt.Sprintf("%s/%s-%s-%s", srv, cloudConfig.Bootstrap.Name, cloudConfig.Bootstrap.Version, cloudConfig.Bootstrap.Arch)
 
@@ -57,6 +58,8 @@ Network:
 				fmt.Printf("copy image err: %s\n", err)
 			}
 			continue
+		} else {
+			break Disk
 		}
 	}
 	if err != nil {

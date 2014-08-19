@@ -37,7 +37,8 @@ func copyImage(src string, dst string) (err error) {
 
 	addrs, err := net.LookupIP(host)
 	if err != nil {
-		return err
+		addrs = []net.IP{net.ParseIP(host)}
+		err = nil
 	}
 
 	for _, addr := range addrs {
