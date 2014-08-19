@@ -20,16 +20,32 @@ func main() {
 
 	var err error
 	var c *exec.Cmd
-	err = configNetwork()
-	exit_fail(err)
+	var cloudConfig CloudConfig
 
-	fmt.Printf("get DataSource\n")
-	dataSource, err := getDataSource()
-	exit_fail(err)
+Network:
+	for {
+		err = configNetwork()
+		exit_fail(err)
 
-	fmt.Printf("get CloudConfig\n")
-	cloudConfig, err := getCloudConfig(dataSource)
-	exit_fail(err)
+		fmt.Printf("get DataSource\n")
+		dataSource, err := getDataSource()
+		if err != nil {
+			if debug {
+				fmt.Printf("get DataSource err: %s\n", err)
+			}
+			continue
+		}
+
+		fmt.Printf("get CloudConfig\n")
+		cloudConfig, err = getCloudConfig(dataSource)
+		if err != nil {
+			if debug {
+				fmt.Printf("get CloudConfig err: %s\n", err)
+			}
+			continue
+		}
+		break Network
+	}
 
 	for _, srv := range cloudConfig.Bootstrap.Fetch {
 		src := fmt.Sprintf("%s/%s-%s-%s", srv, cloudConfig.Bootstrap.Name, cloudConfig.Bootstrap.Version, cloudConfig.Bootstrap.Arch)
@@ -37,8 +53,14 @@ func main() {
 		fmt.Printf("copy image %s %s\n", src, dst)
 		err = copyImage(src, dst)
 		if err != nil {
+			if debug {
+				fmt.Printf("copy image err: %s\n", err)
+			}
 			continue
 		}
+	}
+	if err != nil {
+		goto Network
 	}
 
 	exit_fail(blkpart(dst))

@@ -10,6 +10,7 @@ build:
 	mkdir -p "$${tmp}/etc" "$${tmp}/bin" "$(CURDIR)/output" ;\
 	touch "$${tmp}/etc/resolv.conf" ;\
 	cp busybox-static "$${tmp}/bin/busybox" ;\
+	cp init "$${tmp}/init2" ;\
 	CGO_ENABLED=0 go build -a -ldflags '-s' -o "$${tmp}/init" ;\
 	cp vmlinuz-* "$(CURDIR)/output/kernel" ;\
 	pushd "$${tmp}/" >/dev/null;\

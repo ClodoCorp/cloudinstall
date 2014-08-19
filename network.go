@@ -12,6 +12,9 @@ import (
 	"github.com/d2g/dhcp4client"
 )
 
+var ipv4 bool = false
+var ipv6 bool = false
+
 func configNetwork() (err error) {
 
 	var cmdline_ifaces []string
@@ -38,18 +41,35 @@ func configNetwork() (err error) {
 	}
 	var err4, err6 error
 
-	if cmdline_mode == "auto4" || cmdline_mode == "dhcp4" {
+	if cmdline_mode == "auto4" || cmdline_mode == "dhcp4" || cmdline_mode == "auto" {
 		err4 = networkAuto4(cmdline_ifaces)
+		if err4 == nil {
+			ipv4 = true
+		}
 	}
 	if debug && err4 != nil {
 		fmt.Printf("ipv4 error: %s\n", err4.Error())
 	}
 
-	if cmdline_mode == "auto6" || cmdline_mode == "dhcp6" {
+	if cmdline_mode == "auto6" || cmdline_mode == "dhcp6" || cmdline_mode == "auto" {
 		err6 = networkAuto6(cmdline_ifaces)
+		if err6 == nil {
+			ipv6 = true
+		}
 	}
 	if debug && err6 != nil {
 		fmt.Printf("ipv6 error: %s\n", err6.Error())
+	}
+
+	if debug {
+		ifaces, err := net.Interfaces()
+		exit_fail(err)
+		for _, iface := range ifaces {
+			fmt.Printf("iface: %+v\n", iface)
+			addrs, _ := iface.Addrs()
+			fmt.Printf("iface addrs: %+v\n", addrs)
+		}
+		time.Sleep(10 * time.Second)
 	}
 
 	if err4 != nil && err6 != nil {
@@ -70,39 +90,96 @@ func networkIfacesUp(ifaces []string) (err error) {
 }
 
 func networkAuto6(ifaces []string) (err error) {
+
+	exit_fail(networkIfacesUp(ifaces))
+
 	err = fmt.Errorf("failed to configure ipv6")
 
-	for _, ifname := range ifaces {
+	exit_fail(ioutil.WriteFile("/etc/resolv.conf", []byte(fmt.Sprintf("nameserver 2001:4860:4860::8888\nnameserver 2001:4860:4860::8844\n")), 0644))
+	if debug {
+		buf, _ := ioutil.ReadFile("/etc/resolv.conf")
+		fmt.Printf("nameservers is: %s\n", buf)
+		time.Sleep(2 * time.Second)
+	}
 
+	return nil
+	/*
+		for _, ifname := range ifaces {
+
+			iface, err := net.InterfaceByName(ifname)
+			exit_fail(err)
+
+			addrs, _ := iface.Addrs()
+			for _, addr := range addrs {
+				a := strings.Split(addr.String(), "/")[0]
+				ip := net.ParseIP(a)
+				if ip == nil {
+					continue
+				}
+
+				if ip.To4() != nil {
+					if strings.HasPrefix(a, "fe80") {
+						continue
+					}
+					//				routes, err := netlink.NetworkGetRoutes()
+					//			if len(routes) < 1 {
+					//			fmt.Printf("Something wrong routes < 1: %+v\n", routes)
+					//	}
+					//				if err == nil {
+					//					for _, route := range routes {
+					//					if route.Default {
+					//							exit_fail(ioutil.WriteFile("/etc/resolv.conf", []byte(fmt.Sprintf("nameserver %s\n", route.IP)), 0644))
+					exit_fail(ioutil.WriteFile("/etc/resolv.conf", []byte(fmt.Sprintf("nameserver 2001:4860:4860::8888\nnameserver 2001:4860:4860::8844\n")), 0644))
+					buf, _ := ioutil.ReadFile("/etc/resolv.conf")
+					fmt.Printf("nameservers is: %s\n", buf)
+					time.Sleep(10 * time.Second)
+					//					return err
+					//			}
+					//	}
+					//			}
+				}
+			}
+		}
+		return err
+	*/
+}
+
+func flushAddr(ifaces []string, family string) (err error) {
+	for _, ifname := range ifaces {
 		iface, err := net.InterfaceByName(ifname)
 		exit_fail(err)
 
 		addrs, _ := iface.Addrs()
 		for _, addr := range addrs {
-			a := strings.Split(addr.String(), "/")[0]
-			ip := net.ParseIP(a)
-			if ip == nil {
+			if debug {
+				fmt.Printf("present addr: %s\n", addr.String())
+			}
+			ip, ipnet, err := net.ParseCIDR(addr.String())
+			if err != nil {
+				fmt.Printf("parsecidr error: %s\n", err.Error())
+			}
+			if family == "ipv4" && ip.To4() == nil {
+				if debug {
+					fmt.Printf("family ipv4 skip %s\n", ip)
+				}
 				continue
 			}
-
-			if ip.To4() != nil {
-				if strings.HasPrefix(a, "fe80") {
-					continue
+			if family == "ipv6" && ip.To4() != nil {
+				if debug {
+					fmt.Printf("family ipv6 skip %s\n", ip)
 				}
-				routes, err := netlink.NetworkGetRoutes()
-				if err == nil {
-					for _, route := range routes {
-						if route.Default {
-							//							exit_fail(ioutil.WriteFile("/etc/resolv.conf", []byte(fmt.Sprintf("nameserver %s\n", route.IP)), 0644))
-							exit_fail(ioutil.WriteFile("/etc/resolv.conf", []byte(fmt.Sprintf("nameserver 2001:4860:4860::8888\nnameserver 2001:4860:4860::8844\n")), 0644))
-							return err
-						}
-					}
-				}
+				continue
+			}
+			if debug {
+				fmt.Printf("try to remove addr %s\n", addr.String())
+			}
+			err = netlink.NetworkLinkDelIp(iface, ip, ipnet)
+			if err != nil {
+				fmt.Printf("ipdel err: %s\n", err.Error())
 			}
 		}
 	}
-	return err
+	return nil
 }
 
 func networkAuto4(ifaces []string) (err error) {
@@ -113,14 +190,14 @@ func networkAuto4(ifaces []string) (err error) {
 		exit_fail(err)
 
 		if iface.Flags&net.FlagLoopback == 0 {
+			flushAddr(ifaces, "ipv4")
 			exit_fail(netlink.AddDefaultGw("0.0.0.0", ifname))
-
 			client := dhcp4client.Client{}
 			client.IgnoreServers = []net.IP{}
 			client.MACAddress = iface.HardwareAddr
 			client.Timeout = (10 * time.Second)
 			exit_fail(client.Connect())
-
+			defer client.Close()
 			ok, packet, err := client.Request()
 			if !ok || err != nil {
 				return fmt.Errorf("can't do dhcp request")

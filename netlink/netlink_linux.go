@@ -645,6 +645,53 @@ func NetworkSetNsFd(iface *net.Interface, fd int) error {
 	return s.HandleAck(wb.Seq)
 }
 
+// Delete an IP address from an interface. This is identical to:
+// ip addr del $ip/$ipNet dev $iface
+func NetworkLinkDelIp(iface *net.Interface, ip net.IP, ipNet *net.IPNet) error {
+	return networkLinkIpAction(
+		syscall.RTM_DELADDR,
+		syscall.NLM_F_ACK,
+		IfAddr{iface, ip, ipNet},
+	)
+}
+
+func networkLinkIpAction(action, flags int, ifa IfAddr) error {
+	s, err := getNetlinkSocket()
+	if err != nil {
+		return err
+	}
+	defer s.Close()
+
+	family := getIpFamily(ifa.IP)
+
+	wb := newNetlinkRequest(action, flags)
+
+	msg := newIfAddrmsg(family)
+	msg.Index = uint32(ifa.Iface.Index)
+	prefixLen, _ := ifa.IPNet.Mask.Size()
+	msg.Prefixlen = uint8(prefixLen)
+	wb.AddData(msg)
+
+	var ipData []byte
+	if family == syscall.AF_INET {
+		ipData = ifa.IP.To4()
+	} else {
+		ipData = ifa.IP.To16()
+	}
+
+	localData := newRtAttr(syscall.IFA_LOCAL, ipData)
+	wb.AddData(localData)
+
+	addrData := newRtAttr(syscall.IFA_ADDRESS, ipData)
+	wb.AddData(addrData)
+
+	if err := s.Send(wb); err != nil {
+		return err
+	}
+
+	return s.HandleAck(wb.Seq)
+}
+
 // Add an Ip address to an interface. This is identical to:
 // ip addr add $ip/$ipNet dev $iface
 func NetworkLinkAddIp(iface *net.Interface, ip net.IP, ipNet *net.IPNet) error {
