@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	netlink "./netlink"
 	"github.com/d2g/dhcp4"
 	"github.com/d2g/dhcp4client"
+	"github.com/vtolstov/libcontainer/netlink"
 )
 
 var ipv4 bool = false
@@ -90,12 +90,11 @@ func networkIfacesUp(ifaces []string) (err error) {
 }
 
 func networkAuto6(ifaces []string) (err error) {
-
-	exit_fail(networkIfacesUp(ifaces))
-
 	err = fmt.Errorf("failed to configure ipv6")
 
+	exit_fail(networkIfacesUp(ifaces))
 	exit_fail(ioutil.WriteFile("/etc/resolv.conf", []byte(fmt.Sprintf("nameserver 2001:4860:4860::8888\nnameserver 2001:4860:4860::8844\n")), 0644))
+
 	if debug {
 		buf, _ := ioutil.ReadFile("/etc/resolv.conf")
 		fmt.Printf("nameservers is: %s\n", buf)
@@ -184,14 +183,22 @@ func flushAddr(ifaces []string, family string) (err error) {
 
 func networkAuto4(ifaces []string) (err error) {
 	err = fmt.Errorf("failed to configure ipv4")
-	for _, ifname := range ifaces {
 
+	exit_fail(networkIfacesUp(ifaces))
+	exit_fail(ioutil.WriteFile("/etc/resolv.conf", []byte(fmt.Sprintf("nameserver 8.8.8.8\nnameserver 8.8.4.4\n")), 0644))
+
+	if debug {
+		buf, _ := ioutil.ReadFile("/etc/resolv.conf")
+		fmt.Printf("nameservers is: %s\n", buf)
+		time.Sleep(2 * time.Second)
+	}
+
+	for _, ifname := range ifaces {
 		iface, err := net.InterfaceByName(ifname)
 		exit_fail(err)
-
 		if iface.Flags&net.FlagLoopback == 0 {
 			flushAddr(ifaces, "ipv4")
-			exit_fail(netlink.AddDefaultGw("0.0.0.0", ifname))
+			exit_fail(netlink.ReplaceDefaultGw("0.0.0.0", ifname))
 			client := dhcp4client.Client{}
 			client.IgnoreServers = []net.IP{}
 			client.MACAddress = iface.HardwareAddr
@@ -209,11 +216,10 @@ func networkAuto4(ifaces []string) (err error) {
 			}))
 
 			gw := net.IPv4(opts[3][0], opts[3][1], opts[3][2], opts[3][3])
-			exit_fail(netlink.AddDefaultGw(fmt.Sprintf("%s", gw), ifname))
+			exit_fail(netlink.ReplaceDefaultGw(fmt.Sprintf("%s", gw), ifname))
 
 			//			ns := net.IPv4(opts[dhcp4.OptionDomainNameServer][0], opts[dhcp4.OptionDomainNameServer][1], opts[dhcp4.OptionDomainNameServer][2], opts[dhcp4.OptionDomainNameServer][3])
 			//			exit_fail(ioutil.WriteFile("/etc/resolv.conf", []byte(fmt.Sprintf("nameserver %s\n", ns)), 0644))
-			exit_fail(ioutil.WriteFile("/etc/resolv.conf", []byte(fmt.Sprintf("nameserver 8.8.8.8\nnameserver 8.8.4.4\n")), 0644))
 		}
 	}
 	return nil

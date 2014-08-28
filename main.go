@@ -135,7 +135,12 @@ Disk:
 			exit_fail(err)
 			stdin.Reset()
 		}
-
+		/*
+			w, err := os.OpenFile("/mnt/.autorelabel", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+			if err == nil {
+				w.Close()
+			}
+		*/
 		exit_fail(unmount("/mnt/dev", syscall.MNT_DETACH))
 
 		exit_fail(unmount("/mnt", syscall.MNT_DETACH))

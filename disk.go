@@ -10,6 +10,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/vtolstov/go-ioctl"
 )
 
 func copyImage(src string, dst string) (err error) {
@@ -80,4 +82,13 @@ func copyImage(src string, dst string) (err error) {
 		return nil
 	}
 	return nil
+}
+
+func blkpart(dst string) error {
+	w, err := os.OpenFile(dst, os.O_WRONLY, 0600)
+	if err != nil {
+		return err
+	}
+	defer w.Close()
+	return ioctl.BlkRRPart(w.Fd())
 }
