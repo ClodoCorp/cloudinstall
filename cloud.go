@@ -1,8 +1,9 @@
 package main
 
 type User struct {
-	Name   string `yaml:"name,omitempty"`
-	Passwd string `yaml:"passwd,omitempty"`
+	Name   string   `yaml:"name,omitempty"`
+	Passwd string   `yaml:"passwd,omitempty"`
+	SSHKey []string `yaml:"ssh-authorized-keys,omitempty"`
 }
 
 type Bootstrap struct {
@@ -14,8 +15,11 @@ type Bootstrap struct {
 }
 
 type CloudConfig struct {
-	Users     []User    `yaml:"users,omitempty"`
-	Bootstrap Bootstrap `yaml:"bootstrap,omitempty"`
+	AllowRootLogin bool      `yaml:"disable_root,omitempty"`
+	AllowRootSSH   bool      `yaml:"ssh_pwauth,omitempty"`
+	AllowResize    bool      `yaml:"resize_rootfs,omitempty"`
+	Users          []User    `yaml:"users,omitempty"`
+	Bootstrap      Bootstrap `yaml:"bootstrap,omitempty"`
 }
 
 type Ec2 struct {

@@ -27,17 +27,18 @@ Network:
 		err = configNetwork()
 		exit_fail(err)
 
-		fmt.Printf("get DataSource\n")
-		dataSource, err := getDataSource()
-		if err != nil {
-			if debug {
-				fmt.Printf("get DataSource err: %s\n", err)
+		/*
+			fmt.Printf("get DataSource\n")
+			dataSource, err := getDataSource()
+			if err != nil {
+				if debug {
+					fmt.Printf("get DataSource err: %s\n", err)
+				}
+				continue
 			}
-			continue
-		}
-
+		*/
 		fmt.Printf("get CloudConfig\n")
-		cloudConfig, err = getCloudConfig(dataSource)
+		cloudConfig, err = getCloudConfig(DataSource{})
 		if err != nil {
 			if debug {
 				fmt.Printf("get CloudConfig err: %s\n", err)

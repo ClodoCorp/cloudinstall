@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/tls"
+	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -85,11 +86,20 @@ func getCloudConfig(dataSource DataSource) (cloudConfig CloudConfig, err error) 
 		Dial:            (&net.Dialer{DualStack: true}).Dial,
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
+	var metadataUrl string
+	var metadataUrls []string
 	httpClient := &http.Client{Transport: httpTransport, Timeout: 60 * time.Second}
 	var res *http.Response
 	var buffer []byte
 
-	for _, metadataUrl := range dataSource.Datasource.Ec2.MetadataUrls {
+	if dataSource.Datasource.Ec2.MetadataUrls == nil {
+		_, metadataUrl, err = cmdlineVar("cloud-config-url")
+		metadataUrls = append(metadataUrls, metadataUrl)
+	} else {
+		metadataUrls = dataSource.Datasource.Ec2.MetadataUrls
+	}
+
+	for _, metadataUrl := range metadataUrls {
 		var host string
 		var port string
 		u, _ := url.Parse(metadataUrl + "&action=install")
@@ -141,5 +151,5 @@ func getCloudConfig(dataSource DataSource) (cloudConfig CloudConfig, err error) 
 		}
 		return cloudConfig, nil
 	}
-	return
+	return cloudConfig, fmt.Errorf("failed to get cloud-config")
 }

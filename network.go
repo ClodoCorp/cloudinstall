@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
+	"./netlink"
 	"github.com/d2g/dhcp4"
 	"github.com/d2g/dhcp4client"
-	"github.com/vtolstov/libcontainer/netlink"
 )
 
 var ipv4 bool = false
