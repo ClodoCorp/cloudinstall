@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"os/exec"
 	"syscall"
@@ -42,6 +43,7 @@ Network:
 		if err != nil {
 			if debug {
 				fmt.Printf("get CloudConfig err: %s\n", err)
+				time.Sleep(10 * time.Second)
 			}
 			continue
 		}
@@ -51,12 +53,12 @@ Network:
 Disk:
 	for _, srv := range cloudConfig.Bootstrap.Fetch {
 		src := fmt.Sprintf("%s/%s-%s-%s", srv, cloudConfig.Bootstrap.Name, cloudConfig.Bootstrap.Version, cloudConfig.Bootstrap.Arch)
-
 		fmt.Printf("copy image %s %s\n", src, dst)
 		err = copyImage(src, dst)
 		if err != nil {
 			if debug {
 				fmt.Printf("copy image err: %s\n", err)
+				time.Sleep(10 * time.Second)
 			}
 			continue
 		} else {

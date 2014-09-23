@@ -18,7 +18,7 @@ func getDataSource() (dataSource DataSource, err error) {
 		Dial:            (&net.Dialer{DualStack: true}).Dial,
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
-	httpClient := &http.Client{Transport: httpTransport, Timeout: 15 * time.Second}
+	httpClient := &http.Client{Transport: httpTransport, Timeout: 10 * time.Second}
 
 	var res *http.Response
 	var urlDataSource string
@@ -63,6 +63,10 @@ func getDataSource() (dataSource DataSource, err error) {
 
 		res, err = httpClient.Do(req)
 		if err != nil {
+			if debug {
+				fmt.Printf("http: %s", err)
+				time.Sleep(10 * time.Second)
+			}
 			continue
 		}
 		defer res.Body.Close()
@@ -88,7 +92,7 @@ func getCloudConfig(dataSource DataSource) (cloudConfig CloudConfig, err error) 
 	}
 	var metadataUrl string
 	var metadataUrls []string
-	httpClient := &http.Client{Transport: httpTransport, Timeout: 60 * time.Second}
+	httpClient := &http.Client{Transport: httpTransport, Timeout: 10 * time.Second}
 	var res *http.Response
 	var buffer []byte
 
@@ -102,7 +106,7 @@ func getCloudConfig(dataSource DataSource) (cloudConfig CloudConfig, err error) 
 	for _, metadataUrl := range metadataUrls {
 		var host string
 		var port string
-		u, _ := url.Parse(metadataUrl + "&action=install")
+		u, _ := url.Parse(metadataUrl)
 		if strings.Index(u.Host, ":") > 0 {
 			host, port, _ = net.SplitHostPort(u.Host)
 		} else {
@@ -129,13 +133,17 @@ func getCloudConfig(dataSource DataSource) (cloudConfig CloudConfig, err error) 
 				continue
 			}
 
-			req, _ := http.NewRequest("GET", metadataUrl+"&action=install", nil)
+			req, _ := http.NewRequest("GET", metadataUrl, nil)
 			req.URL = u
 			req.URL.Host = net.JoinHostPort(addr.String(), port)
 			req.Host = host
 
 			res, err = httpClient.Do(req)
 			if err != nil {
+				if debug {
+					fmt.Printf("http %s", err)
+					time.Sleep(10 * time.Second)
+				}
 				continue
 			}
 			defer res.Body.Close()
@@ -146,6 +154,10 @@ func getCloudConfig(dataSource DataSource) (cloudConfig CloudConfig, err error) 
 			}
 			err = yaml.Unmarshal(buffer, &cloudConfig)
 			if err != nil {
+				if debug {
+					fmt.Printf("http %s", err)
+					time.Sleep(10 * time.Second)
+				}
 				continue
 			}
 		}
