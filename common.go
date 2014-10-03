@@ -44,6 +44,7 @@ func fatalf(format string, v ...interface{}) {
 
 func exit_fail(err error) {
 	if err != nil {
+		log(fmt.Sprintf("%s", err))
 		fatalf("%s", err)
 	}
 }
