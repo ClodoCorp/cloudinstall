@@ -95,12 +95,13 @@ Disk:
 		for _, fs := range []string{"ext4", "btrfs"} {
 			err = mount("/dev/sda1", "/mnt", fs, syscall.MS_RELATIME, "data=writeback,barrier=0")
 			if err != nil {
-				logError(fmt.Sprintf("mount: %s\n", err))
 				continue
 			}
 			fstype = fs
 		}
-
+		if fstype == "" {
+			exit_fail(fmt.Errorf("failed to determine fstype"))
+		}
 		exit_fail(mount("devtmpfs", "/mnt/dev", "devtmpfs", 0, "mode=0755"))
 
 		exit_fail(mount("proc", "/mnt/proc", "proc", 0, ""))

@@ -64,23 +64,36 @@ func log(t, s string) error {
 		logurl := ""
 		switch t {
 		case "error":
-			logurl = metadataUrl + "&action=log&flag=install_error&message=" + s
+			logurl = metadataUrl + "&action=log&flag=install_error&message=" + url.QueryEscape(s)
 		case "fatal":
-			logurl = metadataUrl + "&action=log&flag=install_fatal&message=" + s
+			logurl = metadataUrl + "&action=log&flag=install_fatal&message=" + url.QueryEscape(s)
 		case "complete":
-			logurl = metadataUrl + "&action=log&flag=install_complete&message=" + s
+			logurl = metadataUrl + "&action=log&flag=install_complete&message=" + url.QueryEscape(s)
 		default:
 			return fmt.Errorf("unknown log level %s", t)
 		}
-		req, _ := http.NewRequest("GET", logurl, nil)
-		req.URL = u
+
+		req, err := http.NewRequest("GET", logurl, nil)
+		if err != nil {
+			if debug {
+				fmt.Printf("http %s\n", err)
+				time.Sleep(10 * time.Second)
+			}
+		}
+		req.URL, err = url.Parse(logurl)
+		if err != nil {
+			if debug {
+				fmt.Printf("http %s\n", err)
+				time.Sleep(10 * time.Second)
+			}
+		}
 		req.URL.Host = net.JoinHostPort(addr.String(), port)
 		req.Host = host
 
 		res, err := httpClient.Do(req)
 		if err != nil {
 			if debug {
-				fmt.Printf("http %s", err)
+				fmt.Printf("http err %s\n", err)
 				time.Sleep(10 * time.Second)
 			}
 		}

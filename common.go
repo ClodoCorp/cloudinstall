@@ -21,11 +21,19 @@ func lookupPathChroot(prog string, chroot string, dirs []string) (string, error)
 }
 
 func mount(source string, target string, fstype string, flags uintptr, data string) (err error) {
-	return syscall.Mount(source, target, fstype, flags, data)
+	err = syscall.Mount(source, target, fstype, flags, data)
+	if err != nil {
+		return fmt.Errorf("mount %s %s %s %s err: %s", source, target, fstype, data, err)
+	}
+	return nil
 }
 
 func unmount(target string, flags int) (err error) {
-	return syscall.Unmount(target, flags)
+	err = syscall.Unmount(target, flags)
+	if err != nil {
+		return fmt.Errorf("unmount %s err: %s", target, err)
+	}
+	return nil
 }
 
 func reboot() error {
