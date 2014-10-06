@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net"
 	"net/http"
@@ -9,11 +10,29 @@ import (
 	"time"
 )
 
-func log(s string) error {
+func logError(s string) error {
+	return log("error", s)
+}
+
+func logFatal(s string) error {
+	return log("fatal", s)
+}
+
+func logComplete(s string) error {
+	return log("complete", s)
+}
+
+func log(t, s string) error {
+	httpTransport := &http.Transport{
+		Dial:            (&net.Dialer{DualStack: true}).Dial,
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	httpClient := &http.Client{Transport: httpTransport, Timeout: 10 * time.Second}
+
 	var host string
 	var port string
 
-	_, metadataUrl, err = cmdlineVar("cloud-config-url")
+	_, metadataUrl, err := cmdlineVar("cloud-config-url")
 
 	u, _ := url.Parse(metadataUrl)
 	if strings.Index(u.Host, ":") > 0 {
@@ -42,17 +61,32 @@ func log(s string) error {
 			continue
 		}
 
-		req, _ := http.NewRequest("GET", metadataUrl+"&action=log&message="+s, nil)
+		logurl := ""
+		switch t {
+		case "error":
+			logurl = metadataUrl + "&action=log&flag=install_error&message=" + s
+		case "fatal":
+			logurl = metadataUrl + "&action=log&flag=install_fatal&message=" + s
+		case "complete":
+			logurl = metadataUrl + "&action=log&flag=install_complete&message=" + s
+		default:
+			return fmt.Errorf("unknown log level %s", t)
+		}
+		req, _ := http.NewRequest("GET", logurl, nil)
 		req.URL = u
 		req.URL.Host = net.JoinHostPort(addr.String(), port)
 		req.Host = host
 
-		res, err = httpClient.Do(req)
+		res, err := httpClient.Do(req)
 		if err != nil {
 			if debug {
 				fmt.Printf("http %s", err)
 				time.Sleep(10 * time.Second)
 			}
 		}
+		if res != nil && res.Body != nil {
+			defer res.Body.Close()
+		}
 	}
+	return nil
 }

@@ -41,7 +41,7 @@ Network:
 		fmt.Printf("get CloudConfig\n")
 		cloudConfig, err = getCloudConfig(DataSource{})
 		if err != nil {
-			log(fmt.Sprintf("get CloudConfig err: %s\n", err))
+			logError(fmt.Sprintf("get CloudConfig err: %s\n", err))
 			if debug {
 				fmt.Printf("get CloudConfig err: %s\n", err)
 				time.Sleep(10 * time.Second)
@@ -57,7 +57,7 @@ Disk:
 		fmt.Printf("copy image %s %s\n", src, dst)
 		err = copyImage(src, dst)
 		if err != nil {
-			log(fmt.Sprintf("copy image err: %s\n", err))
+			logError(fmt.Sprintf("copy image err: %s\n", err))
 			if debug {
 				fmt.Printf("copy image err: %s\n", err)
 				time.Sleep(10 * time.Second)
@@ -95,6 +95,7 @@ Disk:
 		for _, fs := range []string{"ext4", "btrfs"} {
 			err = mount("/dev/sda1", "/mnt", fs, syscall.MS_RELATIME, "data=writeback,barrier=0")
 			if err != nil {
+				logError(fmt.Sprintf("mount: %s\n", err))
 				continue
 			}
 			fstype = fs
@@ -153,5 +154,6 @@ Disk:
 	}
 	sync()
 
+	logComplete("install success")
 	reboot()
 }
