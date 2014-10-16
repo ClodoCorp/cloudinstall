@@ -93,7 +93,7 @@ Disk:
 
 		var fstype string
 		for _, fs := range []string{"ext4", "btrfs"} {
-			err = mount("/dev/sda1", "/mnt", fs, syscall.MS_RELATIME, "data=writeback,barrier=0")
+			err = mount("/dev/sda1", "/mnt", fs, syscall.MS_RELATIME, "data=writeback,discard,barrier=0")
 			if err != nil {
 				continue
 			}

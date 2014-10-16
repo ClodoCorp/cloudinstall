@@ -1,7 +1,7 @@
 package main
 
 import (
-	"compress/gzip"
+	//	"compress/gzip"
 	"crypto/tls"
 	"io"
 	"net"
@@ -10,6 +10,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	gzip "github.com/klauspost/pgzip"
 
 	"github.com/vtolstov/go-ioctl"
 )
