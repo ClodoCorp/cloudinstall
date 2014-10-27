@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"os/exec"
+	"strings"
 	"syscall"
 )
 
@@ -76,10 +77,10 @@ Disk:
 	parts, err := filepath.Glob("/dev/sda?")
 	exit_fail(err)
 
-	if len(parts) == 1 {
+	if len(parts) == 1 && !strings.Contains(cloudConfig.Bootstrap.Name, "bsd") {
 
 		chroot := &syscall.SysProcAttr{Chroot: "/mnt"}
-
+		// TODO: add autodetection of partition layout
 		stdin := new(bytes.Buffer)
 		stdin.Write([]byte("o\nn\np\n1\n2048\n\nw\n"))
 		c = exec.Command("/bin/busybox", "fdisk", "-u", dst)
