@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
+	"io"
+	"log"
 	"path/filepath"
 	"time"
 
@@ -23,6 +26,10 @@ func main() {
 	var err error
 	var c *exec.Cmd
 	var cloudConfig CloudConfig
+	var stdout io.ReadCloser
+	stdin := new(bytes.Buffer)
+	chroot := &syscall.SysProcAttr{Chroot: "/mnt"}
+	var fstype string
 
 Network:
 	for {
@@ -77,22 +84,63 @@ Disk:
 	parts, err := filepath.Glob("/dev/sda?")
 	exit_fail(err)
 
-	if len(parts) == 1 && !strings.Contains(cloudConfig.Bootstrap.Name, "bsd") {
+	var ostype string
+	if strings.Contains(cloudConfig.Bootstrap.Name, "bsd") {
+		ostype = "bsd"
+	} else {
+		ostype = "linux"
+	}
 
-		chroot := &syscall.SysProcAttr{Chroot: "/mnt"}
-		// TODO: add autodetection of partition layout
-		stdin := new(bytes.Buffer)
-		stdin.Write([]byte("o\nn\np\n1\n2048\n\nw\n"))
+	var partstart string = "2048"
+	if len(parts) == 1 {
+		c = exec.Command("/bin/busybox", "fdisk", "-lu", dst)
+		c.Dir = "/"
+		stdout, err = c.StdoutPipe()
+		if err != nil {
+			goto fail
+		}
+		r := bufio.NewReader(stdout)
+
+		if err = c.Start(); err != nil {
+			goto fail
+		}
+
+		for {
+			line, err := r.ReadString('\n')
+			if err != nil {
+				break
+			}
+
+			if strings.HasPrefix(line, dst) {
+				parts := strings.Fields(line) // /dev/sda1      *      4096   251658239   125827072  83 Linux
+				if parts[1] == "*" {
+					partstart = parts[2]
+				} else {
+					partstart = parts[1]
+				}
+			}
+		}
+
+		if err = c.Wait(); err != nil && partstart == "" {
+			goto fail
+		}
+	}
+	log.Printf("rewrite partition table %s\n", "o\nn\np\n1\n"+partstart+"\n\na\nw\n")
+	time.Sleep(10 * time.Second)
+	switch ostype {
+	case "linux":
+		stdin.Write([]byte("o\nn\np\n1\n" + partstart + "\n\na\nw\n"))
 		c = exec.Command("/bin/busybox", "fdisk", "-u", dst)
 		c.Dir = "/"
 		c.Stdin = stdin
 		_, err = c.CombinedOutput()
 		exit_fail(err)
 		stdin.Reset()
-
 		exit_fail(blkpart(dst))
+	}
 
-		var fstype string
+	switch ostype {
+	case "linux":
 		for _, fs := range []string{"ext4", "btrfs"} {
 			err = mount("/dev/sda1", "/mnt", fs, syscall.MS_RELATIME, "data=writeback,discard,barrier=0")
 			if err != nil {
@@ -152,10 +200,17 @@ Disk:
 		exit_fail(unmount("/mnt/dev", syscall.MNT_DETACH))
 
 		exit_fail(unmount("/mnt", syscall.MNT_DETACH))
-
 	}
+
 	sync()
 
 	logComplete("install success")
 	reboot()
+	return
+
+fail:
+	logFatal("install fail")
+	time.Sleep(50 * time.Minute)
+	reboot()
+	return
 }

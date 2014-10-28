@@ -11,18 +11,18 @@ import (
 )
 
 func logError(s string) error {
-	return log("error", s)
+	return httplog("error", s)
 }
 
 func logFatal(s string) error {
-	return log("fatal", s)
+	return httplog("fatal", s)
 }
 
 func logComplete(s string) error {
-	return log("complete", s)
+	return httplog("complete", s)
 }
 
-func log(t, s string) error {
+func httplog(t, s string) error {
 	httpTransport := &http.Transport{
 		Dial:            (&net.Dialer{DualStack: true}).Dial,
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
