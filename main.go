@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"log"
 	"path/filepath"
 	"time"
 
@@ -125,83 +124,83 @@ Disk:
 			goto fail
 		}
 	}
-	log.Printf("rewrite partition table %s\n", "o\nn\np\n1\n"+partstart+"\n\na\nw\n")
-	time.Sleep(10 * time.Second)
-	switch ostype {
-	case "linux":
-		stdin.Write([]byte("o\nn\np\n1\n" + partstart + "\n\na\nw\n"))
-		c = exec.Command("/bin/busybox", "fdisk", "-u", dst)
-		c.Dir = "/"
-		c.Stdin = stdin
-		_, err = c.CombinedOutput()
-		exit_fail(err)
-		stdin.Reset()
-		exit_fail(blkpart(dst))
-	}
 
-	switch ostype {
-	case "linux":
-		for _, fs := range []string{"ext4", "btrfs"} {
-			err = mount("/dev/sda1", "/mnt", fs, syscall.MS_RELATIME, "data=writeback,discard,barrier=0")
-			if err != nil {
-				continue
-			}
-			fstype = fs
-		}
-		if fstype == "" {
-			exit_fail(fmt.Errorf("failed to determine fstype"))
-		}
-		exit_fail(mount("devtmpfs", "/mnt/dev", "devtmpfs", 0, "mode=0755"))
-
-		exit_fail(mount("proc", "/mnt/proc", "proc", 0, ""))
-
-		exit_fail(mount("sys", "/mnt/sys", "sysfs", 0, ""))
-
-		switch fstype {
-		case "ext3", "ext4":
-			resize2fs, err := lookupPathChroot("resize2fs", "/mnt", []string{"/sbin", "/usr/sbin"})
-			exit_fail(err)
-
-			c = exec.Command(resize2fs, "/dev/sda1")
-			c.Dir = "/"
-			c.SysProcAttr = chroot
-			_, err = c.CombinedOutput()
-			exit_fail(err)
-		case "btrfs":
-			btrfs, err := lookupPathChroot("btrfs", "/mnt", []string{"/sbin", "/usr/sbin"})
-			exit_fail(err)
-			c = exec.Command(btrfs, "filesystem", "resize", "max", "/")
-			c.Dir = "/"
-			c.SysProcAttr = chroot
-			_, err = c.CombinedOutput()
-			exit_fail(err)
-		}
-
-		for _, user := range cloudConfig.Users {
-			chpasswd, err := lookupPathChroot("chpasswd", "/mnt", []string{"/sbin", "/usr/sbin"})
-			exit_fail(err)
-
-			fmt.Printf("set root password\n")
-			stdin.Write([]byte(user.Name + ":" + user.Passwd))
-			c = exec.Command(chpasswd, "-e")
+	if len(parts) == 1 {
+		switch ostype {
+		case "linux":
+			stdin.Write([]byte("o\nn\np\n1\n" + partstart + "\n\na\nw\n"))
+			c = exec.Command("/bin/busybox", "fdisk", "-u", dst)
 			c.Dir = "/"
 			c.Stdin = stdin
-			c.SysProcAttr = chroot
 			_, err = c.CombinedOutput()
 			exit_fail(err)
 			stdin.Reset()
+			exit_fail(blkpart(dst))
 		}
-		/*
-			w, err := os.OpenFile("/mnt/.autorelabel", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-			if err == nil {
-				w.Close()
+
+		switch ostype {
+		case "linux":
+			for _, fs := range []string{"ext4", "btrfs"} {
+				err = mount("/dev/sda1", "/mnt", fs, syscall.MS_RELATIME, "data=writeback,discard,barrier=0")
+				if err != nil {
+					continue
+				}
+				fstype = fs
 			}
-		*/
-		exit_fail(unmount("/mnt/dev", syscall.MNT_DETACH))
+			if fstype == "" {
+				exit_fail(fmt.Errorf("failed to determine fstype"))
+			}
+			exit_fail(mount("devtmpfs", "/mnt/dev", "devtmpfs", 0, "mode=0755"))
 
-		exit_fail(unmount("/mnt", syscall.MNT_DETACH))
+			exit_fail(mount("proc", "/mnt/proc", "proc", 0, ""))
+
+			exit_fail(mount("sys", "/mnt/sys", "sysfs", 0, ""))
+
+			switch fstype {
+			case "ext3", "ext4":
+				resize2fs, err := lookupPathChroot("resize2fs", "/mnt", []string{"/sbin", "/usr/sbin"})
+				exit_fail(err)
+
+				c = exec.Command(resize2fs, "/dev/sda1")
+				c.Dir = "/"
+				c.SysProcAttr = chroot
+				_, err = c.CombinedOutput()
+				exit_fail(err)
+			case "btrfs":
+				btrfs, err := lookupPathChroot("btrfs", "/mnt", []string{"/sbin", "/usr/sbin"})
+				exit_fail(err)
+				c = exec.Command(btrfs, "filesystem", "resize", "max", "/")
+				c.Dir = "/"
+				c.SysProcAttr = chroot
+				_, err = c.CombinedOutput()
+				exit_fail(err)
+			}
+
+			for _, user := range cloudConfig.Users {
+				chpasswd, err := lookupPathChroot("chpasswd", "/mnt", []string{"/sbin", "/usr/sbin"})
+				exit_fail(err)
+
+				fmt.Printf("set root password\n")
+				stdin.Write([]byte(user.Name + ":" + user.Passwd))
+				c = exec.Command(chpasswd, "-e")
+				c.Dir = "/"
+				c.Stdin = stdin
+				c.SysProcAttr = chroot
+				_, err = c.CombinedOutput()
+				exit_fail(err)
+				stdin.Reset()
+			}
+			/*
+				w, err := os.OpenFile("/mnt/.autorelabel", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+				if err == nil {
+					w.Close()
+				}
+			*/
+			exit_fail(unmount("/mnt/dev", syscall.MNT_DETACH))
+
+			exit_fail(unmount("/mnt", syscall.MNT_DETACH))
+		}
 	}
-
 	sync()
 
 	logComplete("install success")
