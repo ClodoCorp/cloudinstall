@@ -83,11 +83,9 @@ Disk:
 	parts, err := filepath.Glob("/dev/sda?")
 	exit_fail(err)
 
-	var ostype string
+	var ostype string = "linux"
 	if strings.Contains(cloudConfig.Bootstrap.Name, "bsd") {
 		ostype = "bsd"
-	} else {
-		ostype = "linux"
 	}
 
 	var partstart string = "2048"
@@ -111,24 +109,22 @@ Disk:
 			}
 
 			if strings.HasPrefix(line, dst) {
-				parts := strings.Fields(line) // /dev/sda1      *      4096   251658239   125827072  83 Linux
-				if parts[1] == "*" {
-					partstart = parts[2]
+				ps := strings.Fields(line) // /dev/sda1      *      4096   251658239   125827072  83 Linux
+				if ps[1] == "*" {
+					partstart = ps[2]
 				} else {
-					partstart = parts[1]
+					partstart = ps[1]
 				}
 			}
 		}
 
-		if err = c.Wait(); err != nil && partstart == "" {
+		if err = c.Wait(); err != nil || partstart == "" {
 			goto fail
 		}
-	}
 
-	if len(parts) == 1 {
 		switch ostype {
 		case "linux":
-			stdin.Write([]byte("o\nn\np\n1\n" + partstart + "\n\na\nw\n"))
+			stdin.Write([]byte("o\nn\np\n1\n" + partstart + "\n\na\n1\nw\n"))
 			c = exec.Command("/bin/busybox", "fdisk", "-u", dst)
 			c.Dir = "/"
 			c.Stdin = stdin
