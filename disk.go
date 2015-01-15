@@ -8,11 +8,12 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/cheggaaa/pb"
 	gzip "github.com/klauspost/pgzip"
-
 	"github.com/vtolstov/go-ioctl"
 )
 
@@ -53,12 +54,29 @@ func copyImage(src string, dst string) (err error) {
 			continue
 		}
 
-		req, _ := http.NewRequest("GET", src, nil)
+		req, _ := http.NewRequest("HEAD", src, nil)
 		req.URL = u
 		req.URL.Host = net.JoinHostPort(addr.String(), port)
 		req.Host = host
 
 		res, err := httpClient.Do(req)
+		if err != nil {
+			return err
+		}
+		i, _ := strconv.Atoi(res.Header.Get("Content-Length"))
+		bar := pb.New(i)
+		bar.ShowSpeed = true
+		bar.ShowTimeLeft = true
+		bar.ShowPercent = true
+		bar.SetRefreshRate(time.Second)
+		bar.SetWidth(80)
+		bar.SetMaxWidth(80)
+		bar.SetUnits(pb.U_BYTES)
+		bar.Start()
+		defer bar.Finish()
+
+		req.Method = "GET"
+		res, err = httpClient.Do(req)
 		if err != nil {
 			return err
 		}
@@ -76,7 +94,8 @@ func copyImage(src string, dst string) (err error) {
 		}
 		defer r.Close()
 
-		_, err = io.Copy(w, r)
+		wr := io.MultiWriter(w, bar)
+		_, err = io.Copy(wr, r)
 		if err != nil {
 			return err
 		}

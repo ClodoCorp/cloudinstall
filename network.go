@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"./netlink"
 	"github.com/d2g/dhcp4"
 	"github.com/d2g/dhcp4client"
+	"github.com/vishvananda/netlink"
 )
 
 var ipv4 bool = false
@@ -80,10 +80,10 @@ func configNetwork() (err error) {
 
 func networkIfacesUp(ifaces []string) (err error) {
 	for _, ifname := range ifaces {
-		iface, err := net.InterfaceByName(ifname)
+		link, err := netlink.LinkByName(ifname)
 		exit_fail(err)
 
-		exit_fail(netlink.NetworkLinkUp(iface))
+		exit_fail(netlink.LinkSetUp(link))
 	}
 	time.Sleep(2 * time.Second)
 	return nil
@@ -153,7 +153,7 @@ func flushAddr(ifaces []string, family string) (err error) {
 			if debug {
 				fmt.Printf("present addr: %s\n", addr.String())
 			}
-			ip, ipnet, err := net.ParseCIDR(addr.String())
+			ip, _, err := net.ParseCIDR(addr.String())
 			if err != nil {
 				fmt.Printf("parsecidr error: %s\n", err.Error())
 			}
@@ -172,7 +172,16 @@ func flushAddr(ifaces []string, family string) (err error) {
 			if debug {
 				fmt.Printf("try to remove addr %s\n", addr.String())
 			}
-			err = netlink.NetworkLinkDelIp(iface, ip, ipnet)
+			link, err := netlink.LinkByName(ifname)
+			if err != nil {
+				fmt.Printf("link err: %s\n", err.Error())
+			}
+			naddr, err := netlink.ParseAddr(addr.String())
+			if err != nil {
+				fmt.Printf("link err: %s\n", err.Error())
+			}
+
+			err = netlink.AddrDel(link, naddr)
 			if err != nil {
 				fmt.Printf("ipdel err: %s\n", err.Error())
 			}
@@ -196,9 +205,16 @@ func networkAuto4(ifaces []string) (err error) {
 	for _, ifname := range ifaces {
 		iface, err := net.InterfaceByName(ifname)
 		exit_fail(err)
+		link, err := netlink.LinkByName(ifname)
+		exit_fail(err)
 		if iface.Flags&net.FlagLoopback == 0 {
 			flushAddr(ifaces, "ipv4")
-			exit_fail(netlink.ReplaceDefaultGw("0.0.0.0", ifname))
+			routes, err := netlink.RouteList(link, netlink.FAMILY_V4)
+			exit_fail(err)
+			for _, route := range routes {
+				netlink.RouteDel(&route)
+			}
+			netlink.RouteAdd(&netlink.Route{LinkIndex: link.Attrs().Index, Dst: nil})
 			client := dhcp4client.Client{}
 			client.IgnoreServers = []net.IP{}
 			client.MACAddress = iface.HardwareAddr
@@ -210,13 +226,14 @@ func networkAuto4(ifaces []string) (err error) {
 				return fmt.Errorf("can't do dhcp request")
 			}
 			opts := packet.ParseOptions()
-			exit_fail(netlink.NetworkLinkAddIp(iface, packet.YIAddr(), &net.IPNet{
-				IP:   packet.YIAddr(),
-				Mask: net.IPMask(opts[dhcp4.OptionSubnetMask]),
-			}))
+
+			addr, err := netlink.ParseAddr(fmt.Sprintf("%s/%s", packet.YIAddr(), net.IPMask(opts[dhcp4.OptionSubnetMask])))
+			exit_fail(err)
+
+			exit_fail(netlink.AddrAdd(link, addr))
 
 			gw := net.IPv4(opts[3][0], opts[3][1], opts[3][2], opts[3][3])
-			exit_fail(netlink.ReplaceDefaultGw(fmt.Sprintf("%s", gw), ifname))
+			exit_fail(netlink.RouteAdd(&netlink.Route{LinkIndex: link.Attrs().Index, Dst: nil, Gw: gw}))
 
 			//			ns := net.IPv4(opts[dhcp4.OptionDomainNameServer][0], opts[dhcp4.OptionDomainNameServer][1], opts[dhcp4.OptionDomainNameServer][2], opts[dhcp4.OptionDomainNameServer][3])
 			//			exit_fail(ioutil.WriteFile("/etc/resolv.conf", []byte(fmt.Sprintf("nameserver %s\n", ns)), 0644))
