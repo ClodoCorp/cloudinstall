@@ -1,2 +1,3 @@
 #!/bin/busybox ash
+/init2
 /bin/busybox ash

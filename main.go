@@ -14,15 +14,40 @@ import (
 )
 
 func main() {
+	var err error
+
+	/*
+		for {
+			_, err := os.Stat("/dev/tty")
+			if err == nil {
+				break
+			}
+		}
+
+		err = termbox.Init()
+		if err != nil {
+			fmt.Printf("failed to init terminal: %s\n", err)
+			os.Exit(1)
+		}
+		defer termbox.Close()
+
+		err = termbox.Clear(termbox.ColorWhite, termbox.ColorBlack)
+		if err != nil {
+			fmt.Printf("failed to clear terminal: %s\n", err)
+		}
+		termbox.Flush()
+	*/
+
+	fmt.Print("\033[2J")
+
 	dst := "/dev/sda"
 
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("Recovered in f", r)
+			fmt.Printf("Recovered in %+v\n", r)
 		}
 	}()
 
-	var err error
 	var c *exec.Cmd
 	var cloudConfig CloudConfig
 	var stdout io.ReadCloser
@@ -45,7 +70,9 @@ Network:
 				continue
 			}
 		*/
-		fmt.Printf("get CloudConfig\n")
+		if debug {
+			fmt.Printf("get CloudConfig\n")
+		}
 		cloudConfig, err = getCloudConfig(DataSource{})
 		if err != nil {
 			logError(fmt.Sprintf("get CloudConfig err: %s\n", err))
@@ -176,7 +203,10 @@ Disk:
 				chpasswd, err := lookupPathChroot("chpasswd", "/mnt", []string{"/sbin", "/usr/sbin"})
 				exit_fail(err)
 
-				fmt.Printf("set root password\n")
+				if debug {
+					fmt.Printf("set root password\n")
+				}
+
 				stdin.Write([]byte(user.Name + ":" + user.Passwd))
 				c = exec.Command(chpasswd, "-e")
 				c.Dir = "/"

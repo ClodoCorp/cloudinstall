@@ -3,6 +3,7 @@ package main
 import (
 	//	"compress/gzip"
 	"crypto/tls"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -82,21 +83,36 @@ func copyImage(src string, dst string) (err error) {
 		}
 		defer res.Body.Close()
 
-		w, err := os.OpenFile(dst, os.O_WRONLY, 0600)
+		fw, err := os.OpenFile(dst, os.O_WRONLY, 0600)
 		if err != nil {
 			return err
 		}
-		defer w.Close()
+		defer fw.Close()
 
-		r, err := gzip.NewReader(res.Body)
+		pr, pw := io.Pipe()
+		mw := io.MultiWriter(pw, bar)
+		go func() error {
+			_, err := io.Copy(mw, res.Body)
+			if err != nil {
+				fmt.Printf("copy error: %s\n", err)
+				return err
+			}
+
+			defer pw.Close()
+			return nil
+			//			defer pr.Close()
+		}()
+
+		gr, err := gzip.NewReader(pr)
 		if err != nil {
+			fmt.Printf("gz error: %s\n", err)
 			return err
 		}
-		defer r.Close()
+		defer gr.Close()
 
-		wr := io.MultiWriter(w, bar)
-		_, err = io.Copy(wr, r)
+		_, err = io.Copy(fw, gr)
 		if err != nil {
+			fmt.Printf("copy error: %s\n", err)
 			return err
 		}
 
