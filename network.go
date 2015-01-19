@@ -41,26 +41,33 @@ func configNetwork() (err error) {
 	}
 	var err4, err6 error
 
-	if cmdline_mode == "auto4" || cmdline_mode == "dhcp4" || cmdline_mode == "auto" {
-		err4 = networkAuto4(cmdline_ifaces)
-		if err4 == nil {
-			ipv4 = true
-		}
-	}
-	if debug && err4 != nil {
-		fmt.Printf("ipv4 error: %s\n", err4.Error())
-	}
-
 	if cmdline_mode == "auto6" || cmdline_mode == "dhcp6" || cmdline_mode == "auto" {
 		err6 = networkAuto6(cmdline_ifaces)
 		if err6 == nil {
 			ipv6 = true
+			goto Success
 		}
 	}
 	if debug && err6 != nil {
 		fmt.Printf("ipv6 error: %s\n", err6.Error())
 	}
 
+	if cmdline_mode == "auto4" || cmdline_mode == "dhcp4" || cmdline_mode == "auto" {
+		err4 = networkAuto4(cmdline_ifaces)
+		if err4 == nil {
+			ipv4 = true
+			goto Success
+		}
+	}
+	if debug && err4 != nil {
+		fmt.Printf("ipv4 error: %s\n", err4.Error())
+	}
+
+	if err4 != nil && err6 != nil {
+		err = fmt.Errorf(err4.Error() + err6.Error())
+	}
+
+Success:
 	if debug {
 		ifaces, err := net.Interfaces()
 		exit_fail(err)
@@ -72,10 +79,7 @@ func configNetwork() (err error) {
 		time.Sleep(10 * time.Second)
 	}
 
-	if err4 != nil && err6 != nil {
-		return fmt.Errorf(err4.Error() + err6.Error())
-	}
-	return
+	return err
 }
 
 func networkIfacesUp(ifaces []string) (err error) {
