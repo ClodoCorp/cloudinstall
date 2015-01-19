@@ -89,58 +89,32 @@ func networkIfacesUp(ifaces []string) (err error) {
 	return nil
 }
 
-func networkAuto6(ifaces []string) (err error) {
-	err = fmt.Errorf("failed to configure ipv6")
+func networkAuto6(ifaces []string) error {
 
 	exit_fail(networkIfacesUp(ifaces))
 	exit_fail(ioutil.WriteFile("/etc/resolv.conf", []byte(fmt.Sprintf("nameserver 2001:4860:4860::8888\nnameserver 2001:4860:4860::8844\n")), 0644))
 
-	if debug {
-		buf, _ := ioutil.ReadFile("/etc/resolv.conf")
-		fmt.Printf("nameservers is: %s\n", buf)
-		time.Sleep(2 * time.Second)
-	}
+	for _, ifname := range ifaces {
+		iface, err := net.InterfaceByName(ifname)
+		exit_fail(err)
 
-	return nil
-	/*
-		for _, ifname := range ifaces {
+		addrs, _ := iface.Addrs()
+		for _, addr := range addrs {
+			a := strings.Split(addr.String(), "/")[0]
+			ip := net.ParseIP(a)
+			if ip == nil {
+				continue
+			}
 
-			iface, err := net.InterfaceByName(ifname)
-			exit_fail(err)
-
-			addrs, _ := iface.Addrs()
-			for _, addr := range addrs {
-				a := strings.Split(addr.String(), "/")[0]
-				ip := net.ParseIP(a)
-				if ip == nil {
+			if ip.To4() != nil {
+				if strings.HasPrefix(a, "fe80") {
 					continue
 				}
-
-				if ip.To4() != nil {
-					if strings.HasPrefix(a, "fe80") {
-						continue
-					}
-					//				routes, err := netlink.NetworkGetRoutes()
-					//			if len(routes) < 1 {
-					//			fmt.Printf("Something wrong routes < 1: %+v\n", routes)
-					//	}
-					//				if err == nil {
-					//					for _, route := range routes {
-					//					if route.Default {
-					//							exit_fail(ioutil.WriteFile("/etc/resolv.conf", []byte(fmt.Sprintf("nameserver %s\n", route.IP)), 0644))
-					exit_fail(ioutil.WriteFile("/etc/resolv.conf", []byte(fmt.Sprintf("nameserver 2001:4860:4860::8888\nnameserver 2001:4860:4860::8844\n")), 0644))
-					buf, _ := ioutil.ReadFile("/etc/resolv.conf")
-					fmt.Printf("nameservers is: %s\n", buf)
-					time.Sleep(10 * time.Second)
-					//					return err
-					//			}
-					//	}
-					//			}
-				}
+				exit_fail(ioutil.WriteFile("/etc/resolv.conf", []byte(fmt.Sprintf("nameserver 2001:4860:4860::8888\nnameserver 2001:4860:4860::8844\n")), 0644))
 			}
 		}
-		return err
-	*/
+	}
+	return nil
 }
 
 func flushAddr(ifaces []string, family string) (err error) {

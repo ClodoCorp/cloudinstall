@@ -38,7 +38,7 @@ func main() {
 		termbox.Flush()
 	*/
 
-	fmt.Print("\033[2J")
+	//	fmt.Print("\033[2J")
 
 	dst := "/dev/sda"
 
@@ -85,23 +85,15 @@ Network:
 		break Network
 	}
 
-Disk:
-	for _, srv := range cloudConfig.Bootstrap.Fetch {
-		src := fmt.Sprintf("%s/%s-%s-%s", srv, cloudConfig.Bootstrap.Name, cloudConfig.Bootstrap.Version, cloudConfig.Bootstrap.Arch)
-		fmt.Printf("copy image %s %s\n", src, dst)
-		err = copyImage(src, dst)
-		if err != nil {
-			logError(fmt.Sprintf("copy image err: %s\n", err))
-			if debug {
-				fmt.Printf("copy image err: %s\n", err)
-				time.Sleep(10 * time.Second)
-			}
-			continue
-		} else {
-			break Disk
-		}
-	}
+	src := fmt.Sprintf("%s-%s-%s", cloudConfig.Bootstrap.Name, cloudConfig.Bootstrap.Version, cloudConfig.Bootstrap.Arch)
+	fmt.Printf("install image %s\n", src)
+	err = copyImage(src, dst, cloudConfig.Bootstrap.Fetch)
 	if err != nil {
+		logError(fmt.Sprintf("copy image err: %s\n", err))
+		if debug {
+			fmt.Printf("copy image err: %s\n", err)
+			time.Sleep(10 * time.Second)
+		}
 		goto Network
 	}
 

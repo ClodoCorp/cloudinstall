@@ -14,5 +14,4 @@ func timeTrack(start time.Time, name string) {
 
 func init() {
 	debug = cmdlineBool("debug")
-	//debug = true
 }
