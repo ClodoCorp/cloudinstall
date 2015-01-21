@@ -26,7 +26,7 @@ x86_32:
 	touch "$${tmp}/etc/resolv.conf" ;\
 	cp data/busybox-x86_32 "$${tmp}/bin/busybox" ;\
 	cp data/init "$${tmp}/init2" ;\
-	CGO_ENABLED=0 go build -a -installsuffix cgo -o "$${tmp}/init" ;\
+	CGO_ENABLED=0 GOARCH=386 go build -a -installsuffix cgo -o "$${tmp}/init" ;\
 	cp data/vmlinuz-*-x86_32 "$(CURDIR)/output/kernel" ;\
 	pushd "$${tmp}/" >/dev/null;\
 	find . | cpio -H newc -o 2>/dev/null | gzip > "$(CURDIR)/output/initrd";\
