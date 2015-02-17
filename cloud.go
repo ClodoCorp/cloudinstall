@@ -7,11 +7,15 @@ type User struct {
 }
 
 type Bootstrap struct {
-	Name    string   `yaml:"name"`
-	Arch    string   `yaml:"arch"`
-	Fetch   []string `yaml:"fetch"`
-	Version string   `yaml:"version"`
-	Resize  bool     `yaml:"resize,omitempty"`
+	Name     string   `yaml:"name"`
+	Arch     string   `yaml:"arch"`
+	Fetch    []string `yaml:"fetch"`
+	Version  string   `yaml:"version"`
+	Resize   bool     `yaml:"resize,omitempty"`
+	Software []struct {
+		Name    string `yaml:"name,omitempty"`
+		Version string `yaml:"version,omitempty"`
+	} `yaml:"software,omitempty"`
 }
 
 type CloudConfig struct {
