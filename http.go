@@ -63,7 +63,7 @@ func getDataSource() (dataSource DataSource, err error) {
 
 		res, err = httpClient.Do(req)
 		if err != nil {
-			if debug {
+			if debug_mode {
 				fmt.Printf("http: %s", err)
 				time.Sleep(10 * time.Second)
 			}
@@ -140,7 +140,7 @@ func getCloudConfig(dataSource DataSource) (cloudConfig CloudConfig, err error) 
 
 			res, err = httpClient.Do(req)
 			if err != nil {
-				if debug {
+				if debug_mode {
 					fmt.Printf("http %s", err)
 					time.Sleep(10 * time.Second)
 				}
@@ -154,7 +154,7 @@ func getCloudConfig(dataSource DataSource) (cloudConfig CloudConfig, err error) 
 			}
 			err = yaml.Unmarshal(buffer, &cloudConfig)
 			if err != nil {
-				if debug {
+				if debug_mode {
 					fmt.Printf("http %s", err)
 					time.Sleep(10 * time.Second)
 				}

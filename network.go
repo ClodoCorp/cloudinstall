@@ -48,7 +48,7 @@ func configNetwork() (err error) {
 			goto Success
 		}
 	}
-	if debug && err6 != nil {
+	if debug_mode && err6 != nil {
 		fmt.Printf("ipv6 error: %s\n", err6.Error())
 	}
 
@@ -59,7 +59,7 @@ func configNetwork() (err error) {
 			goto Success
 		}
 	}
-	if debug && err4 != nil {
+	if debug_mode && err4 != nil {
 		fmt.Printf("ipv4 error: %s\n", err4.Error())
 	}
 
@@ -68,7 +68,7 @@ func configNetwork() (err error) {
 	}
 
 Success:
-	if debug {
+	if debug_mode {
 		ifaces, err := net.Interfaces()
 		exit_fail(err)
 		for _, iface := range ifaces {
@@ -128,41 +128,42 @@ func flushAddr(ifaces []string, family string) (err error) {
 
 		addrs, _ := iface.Addrs()
 		for _, addr := range addrs {
-			if debug {
+			if debug_mode {
 				fmt.Printf("present addr: %s\n", addr.String())
 			}
 			ip, ipnet, err := net.ParseCIDR(addr.String())
 			if err != nil {
 				fmt.Printf("parsecidr error: %s\n", err.Error())
+				return err
 			}
 			if family == "ipv4" && ip.To4() == nil {
-				if debug {
+				if debug_mode {
 					fmt.Printf("family ipv4 skip %s\n", ip)
 				}
 				continue
 			}
 			if family == "ipv6" && ip.To4() != nil {
-				if debug {
+				if debug_mode {
 					fmt.Printf("family ipv6 skip %s\n", ip)
 				}
 				continue
 			}
 
-			if debug {
+			if debug_mode {
 				fmt.Printf("try to remove addr %s\n", addr.String())
 			}
 
 			link, err := netlink.LinkByName(ifname)
 			if err != nil {
 				fmt.Printf("link err: %s\n", err.Error())
+				return err
 			}
 
-			naddr := &netlink.Addr{}
-			naddr.IP = ipnet.IP
-			naddr.Mask = ipnet.Mask
+			naddr, _ := netlink.ParseAddr(ip.String() + "/" + strings.Split(ipnet.String(), "/")[1])
 			err = netlink.AddrDel(link, naddr)
 			if err != nil {
 				fmt.Printf("ipdel err: %s\n", err.Error())
+				return err
 			}
 		}
 	}
@@ -173,7 +174,6 @@ func networkAuto4(ifaces []string) (err error) {
 	err = fmt.Errorf("failed to configure ipv4")
 
 	exit_fail(networkIfacesUp(ifaces))
-	exit_fail(ioutil.WriteFile("/etc/resolv.conf", []byte(fmt.Sprintf("nameserver 8.8.8.8\nnameserver 8.8.4.4\n")), 0644))
 
 	for _, ifname := range ifaces {
 		iface, err := net.InterfaceByName(ifname)
@@ -183,32 +183,32 @@ func networkAuto4(ifaces []string) (err error) {
 
 		if iface.Flags&net.FlagLoopback == 0 {
 			flushAddr(ifaces, "ipv4")
-			if debug {
+			if debug_mode {
 				fmt.Printf("try to get link %+v\n", link)
 			}
 
 			routes, err := netlink.RouteList(link, netlink.FAMILY_V4)
 			exit_fail(err)
 
-			if debug {
+			if debug_mode {
 				fmt.Printf("try to get routes %+v\n", routes)
 			}
 
 			if routes != nil && len(routes) > 0 {
 				for _, route := range routes {
-					if debug {
+					if debug_mode {
 						fmt.Printf("try to remove route %s\n", route)
 					}
 					netlink.RouteDel(&route)
 				}
 			}
 
-			if debug {
+			if debug_mode {
 				fmt.Printf("add default route to 0.0.0.0\n")
 			}
 			exit_fail(netlink.RouteAdd(&netlink.Route{LinkIndex: link.Attrs().Index, Dst: &net.IPNet{}, Src: net.ParseIP("0.0.0.0")}))
 
-			if debug {
+			if debug_mode {
 				fmt.Printf("send dhcp4 request\n")
 			}
 
@@ -239,15 +239,17 @@ func networkAuto4(ifaces []string) (err error) {
 				Dst:       &net.IPNet{},
 				Gw:        gw,
 			}
-			if debug {
+			if debug_mode {
 				fmt.Printf("del default route to 0.0.0.0\n")
 			}
 			exit_fail(netlink.RouteDel(&netlink.Route{LinkIndex: link.Attrs().Index, Src: net.ParseIP("0.0.0.0"), Dst: &net.IPNet{}}))
 
-			if debug {
+			if debug_mode {
 				fmt.Printf("set default route to %s\n", gw.String())
 			}
 			exit_fail(netlink.RouteAdd(r))
+
+			exit_fail(ioutil.WriteFile("/etc/resolv.conf", []byte(fmt.Sprintf("nameserver 8.8.8.8\nnameserver 8.8.4.4\n")), 0644))
 
 			//			ns := net.IPv4(opts[dhcp4.OptionDomainNameServer][0], opts[dhcp4.OptionDomainNameServer][1], opts[dhcp4.OptionDomainNameServer][2], opts[dhcp4.OptionDomainNameServer][3])
 			//			exit_fail(ioutil.WriteFile("/etc/resolv.conf", []byte(fmt.Sprintf("nameserver %s\n", ns)), 0644))

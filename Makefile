@@ -7,11 +7,14 @@ x86_64:
 	@tmp=`mktemp --tmpdir -d`; \
 	trap 'rm -rf "$$tmp";' EXIT SIGINT SIGQUIT ;\
 	rm -rf "$(CURDIR)/output" ;\
-	mkdir -p "$${tmp}/etc" "$${tmp}/bin" "$(CURDIR)/output" ;\
+	mkdir -p "$${tmp}/etc" "$${tmp}/bin" "$(CURDIR)/output" "$${tmp}/lib/modules" ;\
 	touch "$${tmp}/etc/resolv.conf" ;\
 	cp data/busybox-x86_64 "$${tmp}/bin/busybox" ;\
-	cp data/init "$${tmp}/init2" ;\
-	CGO_ENABLED=0 go build -a -installsuffix cgo -o "$${tmp}/init" ;\
+	cp data/init "$${tmp}/init" ;\
+	cp data/nbd.ko-x86_64 "$${tmp}/lib/modules/nbd.ko" ;\
+	go build -a -tags netgo -installsuffix cgo -o "$${tmp}/init2" ;\
+	/usr/lib64/dracut/dracut-install -D "$${tmp}/" --ldd "$${tmp}/init2" ;\
+	rm -rf "$${tmp}/tmp" ;\
 	cp data/vmlinuz-*-x86_64 "$(CURDIR)/output/kernel-x86_64" ;\
 	pushd "$${tmp}/" >/dev/null;\
 	find . | cpio -H newc -o 2>/dev/null | gzip > "$(CURDIR)/output/initrd-x86_64";\
@@ -26,7 +29,8 @@ x86_32:
 	touch "$${tmp}/etc/resolv.conf" ;\
 	cp data/busybox-x86_32 "$${tmp}/bin/busybox" ;\
 	cp data/init "$${tmp}/init2" ;\
-	CGO_ENABLED=0 GOARCH=386 go build -a -installsuffix cgo -o "$${tmp}/init" ;\
+	cp data/nbd.ko-x86_32 "$${tmp}/lib/modules/nbd.ko" ;\
+	GOARCH=386 go build -a -tags netgo -installsuffix cgo -o "$${tmp}/init" ;\
 	cp data/vmlinuz-*-x86_32 "$(CURDIR)/output/kernel-x86_32" ;\
 	pushd "$${tmp}/" >/dev/null;\
 	find . | cpio -H newc -o 2>/dev/null | gzip > "$(CURDIR)/output/initrd-x86_32";\

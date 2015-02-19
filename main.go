@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"runtime/debug"
 	"time"
 
 	"os/exec"
@@ -43,8 +44,8 @@ func main() {
 	dst := "/dev/sda"
 
 	defer func() {
-		if r := recover(); r != nil {
-			fmt.Printf("Recovered in %+v\n", r)
+		if e := recover(); e != nil {
+			fmt.Printf("%s: %s", e, debug.Stack())
 		}
 	}()
 
@@ -64,19 +65,19 @@ Network:
 			fmt.Printf("get DataSource\n")
 			dataSource, err := getDataSource()
 			if err != nil {
-				if debug {
+				if debug_mode {
 					fmt.Printf("get DataSource err: %s\n", err)
 				}
 				continue
 			}
 		*/
-		if debug {
+		if debug_mode {
 			fmt.Printf("get CloudConfig\n")
 		}
 		cloudConfig, err = getCloudConfig(DataSource{})
 		if err != nil {
 			logError(fmt.Sprintf("get CloudConfig err: %s\n", err))
-			if debug {
+			if debug_mode {
 				fmt.Printf("get CloudConfig err: %s\n", err)
 				time.Sleep(10 * time.Second)
 			}
@@ -90,7 +91,7 @@ Network:
 	err = copyImage(src, dst, cloudConfig.Bootstrap.Fetch)
 	if err != nil {
 		logError(fmt.Sprintf("copy image err: %s\n", err))
-		if debug {
+		if debug_mode {
 			fmt.Printf("copy image err: %s\n", err)
 			time.Sleep(10 * time.Second)
 		}
@@ -195,7 +196,7 @@ Network:
 				chpasswd, err := lookupPathChroot("chpasswd", "/mnt", []string{"/sbin", "/usr/sbin"})
 				exit_fail(err)
 
-				if debug {
+				if debug_mode {
 					fmt.Printf("set root password\n")
 				}
 

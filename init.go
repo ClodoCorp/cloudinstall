@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"strings"
 	"syscall"
 )
 
 var (
-	cmdline []string
-	debug   bool = false
+	cmdline    []string
+	debug_mode bool = false
 )
 
 func init() {
@@ -34,7 +35,7 @@ func init() {
 		os.Exit(1)
 	}
 	cmdline = strings.Split(strings.TrimSpace(string(buf)), " ")
-	debug = cmdlineBool("debug")
+	debug_mode = cmdlineBool("debug")
 
 	if _, err := os.Stat("/sys"); err != nil {
 		err = os.Mkdir("/sys", 0755)
@@ -77,6 +78,14 @@ func init() {
 		err = os.Mkdir("/mnt", 0755)
 		if err != nil {
 			fmt.Printf("failed to create /mnt: %s\n", err.Error())
+		}
+	}
+
+	if _, err := os.Stat("/lib/modules/nbd.ko"); err == nil {
+		cmd := exec.Command("/bin/busybox", "insmod", "-f", "-v", "/lib/modules/nbd.ko")
+		err = cmd.Run()
+		if err != nil {
+			fmt.Printf("failed to load nbd.ko: %s\n", err.Error())
 		}
 	}
 

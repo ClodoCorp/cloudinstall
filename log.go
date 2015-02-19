@@ -75,14 +75,14 @@ func httplog(t, s string) error {
 
 		req, err := http.NewRequest("GET", logurl, nil)
 		if err != nil {
-			if debug {
+			if debug_mode {
 				fmt.Printf("http %s\n", err)
 				time.Sleep(10 * time.Second)
 			}
 		}
 		req.URL, err = url.Parse(logurl)
 		if err != nil {
-			if debug {
+			if debug_mode {
 				fmt.Printf("http %s\n", err)
 				time.Sleep(10 * time.Second)
 			}
@@ -92,7 +92,7 @@ func httplog(t, s string) error {
 
 		res, err := httpClient.Do(req)
 		if err != nil {
-			if debug {
+			if debug_mode {
 				fmt.Printf("http err %s\n", err)
 				time.Sleep(10 * time.Second)
 			}
