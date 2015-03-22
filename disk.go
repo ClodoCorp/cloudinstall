@@ -3,6 +3,7 @@ package main
 // #cgo pkg-config: ext2fs com_err
 // #include <ext2fs/ext2fs.h>
 // #include <stdlib.h>
+// #include <et/com_err.h>
 import "C"
 
 import (
@@ -25,17 +26,18 @@ import (
 	"github.com/vtolstov/go-nbd"
 )
 
-type httpReaderSeekerCloser struct {
-	fmt string
+type DeviceReader struct {
+	cr   *bgzf.Reader
+	fs   C.ext2_filsys
+	size int64
+	hr   *HTTPReader
+}
 
-	client *http.Client
-	req    *http.Request
+type HTTPReader struct {
+	c *http.Client
 
-	fs C.ext2_filsys
-
-	start   int64
-	blksize int64
-	length  int64
+	start  int64
+	length int64
 
 	hostport string
 	host     string
@@ -43,120 +45,103 @@ type httpReaderSeekerCloser struct {
 	src      string
 }
 
-func httpReaderSeekerCloserNew(client *http.Client, hostport string, host string, u *url.URL, src string) (*httpReaderSeekerCloser, error) {
-
+func NewDevice(c *http.Client, hostport string, host string, u *url.URL, src string) (*DeviceReader, error) {
 	req, _ := http.NewRequest("HEAD", src, nil)
 	req.URL = u
 	req.URL.Host = hostport
 	req.Host = host
 
-	res, err := client.Do(req)
+	res, err := c.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
-	h := &httpReaderSeekerCloser{hostport: hostport, host: host, url: u, src: src, length: res.ContentLength, client: client, blksize: 5372903424}
-	return h, nil
-}
-
-func (h *httpReaderSeekerCloser) ReadAt(b []byte, offset int64) (n int, err error) {
-	req, _ := http.NewRequest("GET", h.src, nil)
-	req.URL = h.url
-	req.URL.Host = h.hostport
-	req.Host = h.host
-	req.Header.Add("Range", fmt.Sprintf("bytes=%d-%d", offset, len(b)))
-
-	if debug_mode {
-		fmt.Printf("http ReadAt %+v\n", req)
+	hr := &HTTPReader{
+		hostport: hostport,
+		host:     host,
+		url:      u,
+		src:      src,
+		length:   res.ContentLength,
+		c:        c,
 	}
 
-	res, err := h.client.Do(req)
+	r, err := bgzf.NewReader(hr, runtime.NumCPU())
+	if err != nil {
+		return nil, err
+	}
+
+	dev := &DeviceReader{size: 5372903424, cr: r, hr: hr}
+	return dev, nil
+}
+
+func (r *DeviceReader) ReadAt(b []byte, offset int64) (n int, err error) {
+	off := bgzf.Offset{
+		File:  offset,
+		Block: 0,
+	}
+	err = r.cr.Seek(off)
 	if err != nil {
 		return 0, err
 	}
-	defer res.Body.Close()
 
-	hr := httpReader(
-
-	bgzfr, err := bgzf.NewReader(res.Body, runtime.NumCPU())
-	if err != nil {
-		if debug_mode {
-			fmt.Printf("bgzfr err: %s\n", err.Error())
-		}
-		return 0, err
-	}
-	defer bgzfr.Close()
-
-	n, err = bgzfr.Read(b)
-	if err != nil {
-		return n, err
-	}
-	h.start += int64(n)
-	return n, nil
-
-	return 0, nil
+	return r.cr.Read(b)
 }
 
-func (h *httpReaderSeekerCloser) WriteAt(b []byte, offset int64) (int, error) {
+func (r *DeviceReader) WriteAt(b []byte, offset int64) (int, error) {
 	if debug_mode {
 		fmt.Printf("http WriteAt %+v %d\n", b, offset)
 	}
 	return 0, nil
 }
 
-func (h *httpReaderSeekerCloser) Seek(offset int64, whence int) (int64, error) {
+func (r *DeviceReader) Close() error {
+	C.ext2fs_free(r.fs)
+	return r.cr.Close()
+}
+
+func (r *HTTPReader) Seek(offset int64, whence int) (int64, error) {
 	if debug_mode {
 		fmt.Printf("http Seek %d %d\n", offset, whence)
 	}
 	switch whence {
 	case os.SEEK_SET:
-		h.start = offset
+		r.start = offset
 	case os.SEEK_CUR:
-		h.start += offset
+		r.start += offset
 	case os.SEEK_END:
-		h.start = h.length - offset
+		r.start = r.length - offset
 	default:
 		return 0, fmt.Errorf("Seek not implemented for whence %d\n", whence)
 	}
-	return h.start, nil
+	return r.start, nil
 }
 
-func (h *httpReaderSeekerCloser) Close() error {
-	if debug_mode {
-		fmt.Printf("http Close\n")
-	}
-	C.ext2fs_free(h.fs)
-	return nil
-}
-
-func (h *httpReaderSeekerCloser) Read(b []byte) (n int, err error) {
-	req, _ := http.NewRequest("GET", h.src, nil)
-	req.URL = h.url
-	req.URL.Host = h.hostport
-	req.Host = h.host
-	req.Header.Add("Range", fmt.Sprintf("bytes=%d-%d", h.start, len(b)))
+func (r *HTTPReader) Read(b []byte) (n int, err error) {
+	req, _ := http.NewRequest("GET", r.src, nil)
+	req.URL = r.url
+	req.URL.Host = r.hostport
+	req.Host = r.host
+	req.Header.Add("Range", fmt.Sprintf("bytes=%d-%d", r.start, len(b)))
 
 	if debug_mode {
 		fmt.Printf("http Read %+v\n", req)
 	}
 
-	res, err := h.client.Do(req)
+	res, err := r.c.Do(req)
 	if err != nil {
+		if debug_mode {
+			fmt.Printf("http Read err %s\n", err.Error())
+		}
 		return 0, err
 	}
 	defer res.Body.Close()
 
-	bgzfr, err := bgzf.NewReader(res.Body, runtime.NumCPU())
-	if err != nil {
-		return 0, err
-	}
-	defer bgzfr.Close()
-
-	n, err = bgzfr.Read(b)
+	n, err = res.Body.Read(b)
 	if err != nil {
 		return n, err
 	}
-	h.start += int64(n)
+
+	r.start += int64(n)
 	return n, nil
 }
 
@@ -212,7 +197,14 @@ func copyImage(img string, dev_dst string, fetchaddrs []string) (err error) {
 				continue
 			}
 
-			hr, err := httpReaderSeekerCloserNew(httpClient, net.JoinHostPort(addr.String(), port), host, u, src)
+			ndev, err := NewDevice(httpClient, net.JoinHostPort(host, port), host, u, src)
+			if err != nil {
+				return err
+			}
+			defer ndev.Close()
+
+			n := nbd.Create(ndev, ndev.size)
+			dev_src, err := n.Connect()
 			if err != nil {
 				if debug_mode {
 					fmt.Printf("http err: %s\n", err)
@@ -220,7 +212,25 @@ func copyImage(img string, dev_dst string, fetchaddrs []string) (err error) {
 				}
 				continue
 			}
-			return hr.copyFs(dev_dst)
+
+			if debug_mode {
+				log.Printf("nbd device %s ready\n", dev_src)
+			}
+			go n.Handle()
+			if debug_mode {
+				fmt.Printf("handle nbd io\n")
+			}
+
+			err = copyFs(ndev, dev_dst, dev_src)
+			if err != nil {
+				if debug_mode {
+					fmt.Printf("http err: %s\n", err)
+					time.Sleep(600 * time.Second)
+				}
+				continue
+			} else {
+				return nil
+			}
 		}
 	}
 	return nil
@@ -235,23 +245,12 @@ func blkpart(dst string) error {
 	return ioctl.BlkRRPart(w.Fd())
 }
 
-func (h *httpReaderSeekerCloser) copyFs(dev_dst string) error {
-
+func copyFs(ndev *DeviceReader, dev_dst, dev_src string) error {
 	fw, err := os.OpenFile(dev_dst, os.O_WRONLY, 0600)
 	if err != nil {
 		return err
 	}
 	defer fw.Close()
-
-	n := nbd.Create(h, h.blksize) //need heuristic
-	dev_src, err := n.Connect()
-	if err != nil {
-		return err
-	}
-
-	log.Printf("nbd device %s ready\n", dev_src)
-
-	go n.Handle()
 
 	fr, err := os.OpenFile(dev_src, os.O_RDONLY, 0600)
 	if err != nil {
@@ -262,26 +261,21 @@ func (h *httpReaderSeekerCloser) copyFs(dev_dst string) error {
 	blkstr := C.CString(dev_src)
 
 	cmd := exec.Command("/bin/busybox", "fdisk", "-l", "-u", "/dev/nbd0")
-	err = cmd.Run()
+	buf, err := cmd.CombinedOutput()
 	if err != nil {
 		fmt.Printf("failed to get nbd status: %s\n", err.Error())
+	} else {
+		fmt.Printf("fdisk output is :%s\n", buf)
 	}
 
-	if debug_mode {
-		fmt.Printf("open ext2 superblock\n")
-	}
-	ret := C.ext2fs_open(blkstr, C.EXT2_FLAG_FORCE, 0, 0, C.unix_io_manager, &h.fs)
+	ret := C.ext2fs_open(blkstr, C.EXT2_FLAG_FORCE, 0, 0, C.unix_io_manager, &ndev.fs)
 	if ret != 0 {
 		if debug_mode {
-			fmt.Printf("open ext2 superblock fail %d\n", ret)
+			C.com_err("ext2fs_open", ret, "%s", blkstr)
 		}
 		return fmt.Errorf("ext2 error: %d\n", ret)
 	}
 	C.free(unsafe.Pointer(blkstr))
-
-	if debug_mode {
-		fmt.Printf("handle nbd io\n")
-	}
 
 	return nil
 }
