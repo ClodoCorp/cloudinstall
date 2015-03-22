@@ -1,3 +1,4 @@
 tests/
 output/
 cloud-bootstrap
+third_party/pkg/*
