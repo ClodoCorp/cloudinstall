@@ -212,11 +212,10 @@ func networkAuto4(ifaces []string) (err error) {
 				fmt.Printf("send dhcp4 request\n")
 			}
 
-			client := dhcp4client.Client{}
-			client.IgnoreServers = []net.IP{}
-			client.MACAddress = iface.HardwareAddr
-			client.Timeout = (10 * time.Second)
-			exit_fail(client.Connect())
+			client, err := dhcp4client.New(dhcp4client.HardwareAddr(iface.HardwareAddr))
+			if err != nil {
+				return fmt.Errorf("can't create dhcp4 client")
+			}
 			defer client.Close()
 			ok, packet, err := client.Request()
 			if !ok || err != nil {
