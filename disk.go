@@ -1,7 +1,6 @@
 package main
 
 import (
-	//	"compress/gzip"
 	"crypto/tls"
 	"fmt"
 	"io"
@@ -9,16 +8,20 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
 
+	bgzf "github.com/biogo/hts/bgzf"
 	"github.com/cheggaaa/pb"
-	gzip "github.com/klauspost/pgzip"
+	pgzip "github.com/klauspost/pgzip"
 	"github.com/vtolstov/go-ioctl"
 )
 
 func copyImage(img string, dev string, fetchaddrs []string) (err error) {
+	var gr io.ReadCloser
+
 	httpTransport := &http.Transport{
 		Dial:            (&net.Dialer{DualStack: true}).Dial,
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -124,11 +127,15 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 				//			defer pr.Close()
 			}()
 
-			gr, err := gzip.NewReader(pr)
+			gr, err = bgzf.NewReader(pr, runtime.NumCPU())
 			if err != nil {
-				fmt.Printf("gz error: %s\n", err)
-				return err
+				gr, err = pgzip.NewReader(pr)
+				if err != nil {
+					fmt.Printf("gz error: %s\n", err)
+					return err
+				}
 			}
+
 			defer gr.Close()
 
 			_, err = io.Copy(fw, gr)

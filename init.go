@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"runtime"
 	"strings"
 	"syscall"
 )
@@ -88,4 +89,6 @@ func init() {
 			fmt.Printf(err.Error())
 		}
 	*/
+
+	runtime.GOMAXPROCS(runtime.NumCPU())
 }
