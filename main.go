@@ -60,16 +60,6 @@ Network:
 		err = configNetwork()
 		exit_fail(err)
 
-		/*
-			fmt.Printf("get DataSource\n")
-			dataSource, err := getDataSource()
-			if err != nil {
-				if debug {
-					fmt.Printf("get DataSource err: %s\n", err)
-				}
-				continue
-			}
-		*/
 		if debug {
 			fmt.Printf("get CloudConfig\n")
 		}
