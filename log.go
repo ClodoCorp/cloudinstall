@@ -31,8 +31,12 @@ func httplog(t, s string) error {
 
 	var host string
 	var port string
+	var ok bool
 
-	_, metadataUrl, err := cmdlineVar("cloud-config-url")
+	ok, metadataUrl := cmdlineVar("cloud-config-url")
+	if !ok {
+		return fmt.Errorf("no datasource available")
+	}
 
 	u, _ := url.Parse(metadataUrl)
 	if strings.Index(u.Host, ":") > 0 {

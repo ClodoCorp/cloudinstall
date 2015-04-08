@@ -20,8 +20,9 @@ func configNetwork() (err error) {
 	var cmdline_ifaces []string
 	var cmdline_mode string
 
-	_, values, err := cmdlineVar("ip")
-	if err == nil {
+	ok, values := cmdlineVar("ip")
+
+	if ok {
 		if strings.Index(values, ":") == 0 {
 			cmdline_mode = values
 		}

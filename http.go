@@ -23,10 +23,11 @@ func getDataSource() (dataSource DataSource, err error) {
 	var res *http.Response
 	var urlDataSource string
 	var buffer []byte
+	var ok bool
 
-	_, urlDataSource, err = cmdlineVar("cloud-config-url")
-	if err != nil {
-		return
+	ok, urlDataSource = cmdlineVar("cloud-config-url")
+	if !ok {
+		return dataSource, fmt.Errorf("no datasource available")
 	}
 	var host string
 	var port string
@@ -95,9 +96,13 @@ func getCloudConfig(dataSource DataSource) (cloudConfig CloudConfig, err error) 
 	httpClient := &http.Client{Transport: httpTransport, Timeout: 10 * time.Second}
 	var res *http.Response
 	var buffer []byte
+	var ok bool
 
 	if dataSource.Datasource.Ec2.MetadataUrls == nil {
-		_, metadataUrl, err = cmdlineVar("cloud-config-url")
+		ok, metadataUrl = cmdlineVar("cloud-config-url")
+		if !ok {
+			return cloudConfig, fmt.Errorf("no datasource available")
+		}
 		metadataUrls = append(metadataUrls, metadataUrl)
 	} else {
 		metadataUrls = dataSource.Datasource.Ec2.MetadataUrls

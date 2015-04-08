@@ -87,126 +87,129 @@ Network:
 		goto Network
 	}
 
-	exit_fail(blkpart(dst))
+	ok, val := cmdlineVar("cloudinit")
+	if !ok || val == "false" {
+		exit_fail(blkpart(dst))
 
-	parts, err := filepath.Glob("/dev/sda?")
-	exit_fail(err)
+		parts, err := filepath.Glob("/dev/sda?")
+		exit_fail(err)
 
-	var ostype string = "linux"
-	if strings.Contains(cloudConfig.Bootstrap.Name, "bsd") {
-		ostype = "bsd"
-	}
-
-	var partstart string = "2048"
-	if len(parts) == 1 {
-		c = exec.Command("/bin/busybox", "fdisk", "-lu", dst)
-		c.Dir = "/"
-		stdout, err = c.StdoutPipe()
-		if err != nil {
-			goto fail
-		}
-		r := bufio.NewReader(stdout)
-
-		if err = c.Start(); err != nil {
-			goto fail
+		var ostype string = "linux"
+		if strings.Contains(cloudConfig.Bootstrap.Name, "bsd") {
+			ostype = "bsd"
 		}
 
-		for {
-			line, err := r.ReadString('\n')
-			if err != nil {
-				break
-			}
-
-			if strings.HasPrefix(line, dst) {
-				ps := strings.Fields(line) // /dev/sda1      *      4096   251658239   125827072  83 Linux
-				if ps[1] == "*" {
-					partstart = ps[2]
-				} else {
-					partstart = ps[1]
-				}
-			}
-		}
-
-		if err = c.Wait(); err != nil || partstart == "" {
-			goto fail
-		}
-
-		switch ostype {
-		case "linux":
-			stdin.Write([]byte("o\nn\np\n1\n" + partstart + "\n\na\n1\nw\n"))
-			c = exec.Command("/bin/busybox", "fdisk", "-u", dst)
+		var partstart string = "2048"
+		if len(parts) == 1 {
+			c = exec.Command("/bin/busybox", "fdisk", "-lu", dst)
 			c.Dir = "/"
-			c.Stdin = stdin
-			_, err = c.CombinedOutput()
-			exit_fail(err)
-			stdin.Reset()
-			exit_fail(blkpart(dst))
-		}
+			stdout, err = c.StdoutPipe()
+			if err != nil {
+				goto fail
+			}
+			r := bufio.NewReader(stdout)
 
-		switch ostype {
-		case "linux":
-			for _, fs := range []string{"ext4", "btrfs"} {
-				err = mount("/dev/sda1", "/mnt", fs, syscall.MS_RELATIME, "data=writeback,discard,barrier=0")
+			if err = c.Start(); err != nil {
+				goto fail
+			}
+
+			for {
+				line, err := r.ReadString('\n')
 				if err != nil {
-					continue
-				}
-				fstype = fs
-			}
-			if fstype == "" {
-				exit_fail(fmt.Errorf("failed to determine fstype"))
-			}
-			exit_fail(mount("devtmpfs", "/mnt/dev", "devtmpfs", 0, "mode=0755"))
-
-			exit_fail(mount("proc", "/mnt/proc", "proc", 0, ""))
-
-			exit_fail(mount("sys", "/mnt/sys", "sysfs", 0, ""))
-
-			switch fstype {
-			case "ext3", "ext4":
-				resize2fs, err := lookupPathChroot("resize2fs", "/mnt", []string{"/sbin", "/usr/sbin"})
-				exit_fail(err)
-
-				c = exec.Command(resize2fs, "/dev/sda1")
-				c.Dir = "/"
-				c.SysProcAttr = chroot
-				_, err = c.CombinedOutput()
-				exit_fail(err)
-			case "btrfs":
-				btrfs, err := lookupPathChroot("btrfs", "/mnt", []string{"/sbin", "/usr/sbin"})
-				exit_fail(err)
-				c = exec.Command(btrfs, "filesystem", "resize", "max", "/")
-				c.Dir = "/"
-				c.SysProcAttr = chroot
-				_, err = c.CombinedOutput()
-				exit_fail(err)
-			}
-
-			for _, user := range cloudConfig.Users {
-				chpasswd, err := lookupPathChroot("chpasswd", "/mnt", []string{"/sbin", "/usr/sbin"})
-				exit_fail(err)
-
-				if debug {
-					fmt.Printf("set root password\n")
+					break
 				}
 
-				stdin.Write([]byte(user.Name + ":" + user.Passwd))
-				c = exec.Command(chpasswd, "-e")
+				if strings.HasPrefix(line, dst) {
+					ps := strings.Fields(line) // /dev/sda1      *      4096   251658239   125827072  83 Linux
+					if ps[1] == "*" {
+						partstart = ps[2]
+					} else {
+						partstart = ps[1]
+					}
+				}
+			}
+
+			if err = c.Wait(); err != nil || partstart == "" {
+				goto fail
+			}
+
+			switch ostype {
+			case "linux":
+				stdin.Write([]byte("o\nn\np\n1\n" + partstart + "\n\na\n1\nw\n"))
+				c = exec.Command("/bin/busybox", "fdisk", "-u", dst)
 				c.Dir = "/"
 				c.Stdin = stdin
-				c.SysProcAttr = chroot
 				_, err = c.CombinedOutput()
 				exit_fail(err)
 				stdin.Reset()
+				exit_fail(blkpart(dst))
 			}
-			/*
-				w, err := os.OpenFile("/mnt/.autorelabel", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-				if err == nil {
-					w.Close()
-				}
-			*/
-			exit_fail(unmount("/mnt/dev", syscall.MNT_DETACH))
 
-			exit_fail(unmount("/mnt", syscall.MNT_DETACH))
+			switch ostype {
+			case "linux":
+				for _, fs := range []string{"ext4", "btrfs"} {
+					err = mount("/dev/sda1", "/mnt", fs, syscall.MS_RELATIME, "data=writeback,discard,barrier=0")
+					if err != nil {
+						continue
+					}
+					fstype = fs
+				}
+				if fstype == "" {
+					exit_fail(fmt.Errorf("failed to determine fstype"))
+				}
+				exit_fail(mount("devtmpfs", "/mnt/dev", "devtmpfs", 0, "mode=0755"))
+
+				exit_fail(mount("proc", "/mnt/proc", "proc", 0, ""))
+
+				exit_fail(mount("sys", "/mnt/sys", "sysfs", 0, ""))
+
+				switch fstype {
+				case "ext3", "ext4":
+					resize2fs, err := lookupPathChroot("resize2fs", "/mnt", []string{"/sbin", "/usr/sbin"})
+					exit_fail(err)
+
+					c = exec.Command(resize2fs, "/dev/sda1")
+					c.Dir = "/"
+					c.SysProcAttr = chroot
+					_, err = c.CombinedOutput()
+					exit_fail(err)
+				case "btrfs":
+					btrfs, err := lookupPathChroot("btrfs", "/mnt", []string{"/sbin", "/usr/sbin"})
+					exit_fail(err)
+					c = exec.Command(btrfs, "filesystem", "resize", "max", "/")
+					c.Dir = "/"
+					c.SysProcAttr = chroot
+					_, err = c.CombinedOutput()
+					exit_fail(err)
+				}
+
+				for _, user := range cloudConfig.Users {
+					chpasswd, err := lookupPathChroot("chpasswd", "/mnt", []string{"/sbin", "/usr/sbin"})
+					exit_fail(err)
+
+					if debug {
+						fmt.Printf("set root password\n")
+					}
+
+					stdin.Write([]byte(user.Name + ":" + user.Passwd))
+					c = exec.Command(chpasswd, "-e")
+					c.Dir = "/"
+					c.Stdin = stdin
+					c.SysProcAttr = chroot
+					_, err = c.CombinedOutput()
+					exit_fail(err)
+					stdin.Reset()
+				}
+				/*
+					w, err := os.OpenFile("/mnt/.autorelabel", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+					if err == nil {
+						w.Close()
+					}
+				*/
+				exit_fail(unmount("/mnt/dev", syscall.MNT_DETACH))
+
+				exit_fail(unmount("/mnt", syscall.MNT_DETACH))
+			}
 		}
 	}
 	sync()
