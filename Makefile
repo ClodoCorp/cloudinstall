@@ -6,13 +6,13 @@ x86_64:
 	@echo Building
 	@tmp=`mktemp --tmpdir -d`; \
 	trap 'rm -rf "$$tmp";' EXIT SIGINT SIGQUIT ;\
-	rm -rf "$(CURDIR)/output" ;\
+	rm -f "$(CURDIR)/output-x86_64" ;\
 	mkdir -p "$${tmp}/etc" "$${tmp}/bin" "$(CURDIR)/output" ;\
 	touch "$${tmp}/etc/resolv.conf" ;\
 	cp data/busybox-x86_64 "$${tmp}/bin/busybox" ;\
 	cp data/init "$${tmp}/init2" ;\
 	GOPATH=$(CURDIR)/third_party/ CGO_ENABLED=0 go build -a -installsuffix cgo -o "$${tmp}/init" ;\
-	cp data/vmlinuz-*-x86_64 "$(CURDIR)/output/kernel-x86_64" ;\
+	cp -f data/vmlinuz-*-x86_64 "$(CURDIR)/output/kernel-x86_64" ;\
 	pushd "$${tmp}/" >/dev/null;\
 	find . | cpio -H newc -o 2>/dev/null | gzip > "$(CURDIR)/output/initrd-x86_64";\
 	popd >/dev/null
@@ -21,13 +21,13 @@ x86_32:
 	@echo Building
 	@tmp=`mktemp --tmpdir -d`; \
 	trap 'rm -rf "$$tmp";' EXIT SIGINT SIGQUIT ;\
-	rm -rf "$(CURDIR)/output" ;\
+	rm -f "$(CURDIR)/output/*-x86_32" ;\
 	mkdir -p "$${tmp}/etc" "$${tmp}/bin" "$(CURDIR)/output" ;\
 	touch "$${tmp}/etc/resolv.conf" ;\
 	cp data/busybox-x86_32 "$${tmp}/bin/busybox" ;\
 	cp data/init "$${tmp}/init2" ;\
 	GOPATH=$(CURDIR)/third_party/ CGO_ENABLED=0 GOARCH=386 go build -a -installsuffix cgo -o "$${tmp}/init" ;\
-	cp data/vmlinuz-*-x86_32 "$(CURDIR)/output/kernel-x86_32" ;\
+	cp -f data/vmlinuz-*-x86_32 "$(CURDIR)/output/kernel-x86_32" ;\
 	pushd "$${tmp}/" >/dev/null;\
 	find . | cpio -H newc -o 2>/dev/null | gzip > "$(CURDIR)/output/initrd-x86_32";\
 	popd >/dev/null

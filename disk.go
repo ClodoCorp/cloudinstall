@@ -79,8 +79,9 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 			req.Host = host
 
 			res, err := httpClient.Do(req)
-			if err != nil {
+			if err != nil || res.StatusCode != 200 {
 				if debug {
+					err = fmt.Errorf("failed to fetch image %s", req)
 					fmt.Printf("http err: %s\n", err)
 				}
 				continue
@@ -99,8 +100,9 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 
 			req.Method = "GET"
 			res, err = httpClient.Do(req)
-			if err != nil {
+			if err != nil || res.StatusCode != 200 {
 				if debug {
+					err = fmt.Errorf("failed to fetch image %s", req)
 					fmt.Printf("http err: %s\n", err)
 				}
 				continue
