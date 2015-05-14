@@ -1,9 +1,15 @@
 package main
 
 import (
+	"crypto/md5"
+	"crypto/sha1"
+	"crypto/sha256"
+	"crypto/sha512"
 	"crypto/tls"
 	"fmt"
+	"hash"
 	"io"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
@@ -19,8 +25,30 @@ import (
 	"github.com/vtolstov/go-ioctl"
 )
 
+func getHash(t string) hash.Hash {
+	var h hash.Hash
+	switch t {
+	case "md5":
+		h = md5.New()
+	case "sha1":
+		h = sha1.New()
+	case "sha224":
+		h = sha256.New224()
+	case "sha256":
+		h = sha256.New()
+	case "sha384":
+		h = sha512.New384()
+	case "sha512":
+		h = sha512.New()
+	}
+	return h
+}
+
 func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 	var gr io.ReadCloser
+	var h hash.Hash
+	var checksum string
+	var mw io.Writer
 
 	httpTransport := &http.Transport{
 		Dial:            (&net.Dialer{DualStack: true}).Dial,
@@ -83,10 +111,32 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 				if debug {
 					err = fmt.Errorf("failed to fetch image %s", req)
 					fmt.Printf("http err: %s\n", err)
+					time.Sleep(5 * time.Second)
 				}
 				continue
 			}
 			i, _ := strconv.Atoi(res.Header.Get("Content-Length"))
+
+			for _, ct := range []string{"md5", "sha1", "sha244", "sha256", "sha384", "sha512"} {
+				csum := fmt.Sprintf("%s/%s.%ssums", fetchaddr, img, ct)
+				cu, err := url.Parse(csum)
+				if err != nil {
+					if debug {
+						fmt.Printf("url err: %s", err)
+						time.Sleep(5 * time.Second)
+					}
+					continue
+				}
+				req.URL = cu
+				res, err = httpClient.Do(req)
+				if err == nil && res.StatusCode == 200 {
+					checksumBody, _ := ioutil.ReadAll(res.Body)
+					res.Body.Close()
+					checksum = strings.Fields(string(checksumBody))[0]
+					h = getHash(ct)
+				}
+			}
+
 			bar := pb.New(i)
 			bar.ShowSpeed = true
 			bar.ShowTimeLeft = true
@@ -99,11 +149,14 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 			defer bar.Finish()
 
 			req.Method = "GET"
+			req.URL = u
+
 			res, err = httpClient.Do(req)
 			if err != nil || res.StatusCode != 200 {
 				if debug {
 					err = fmt.Errorf("failed to fetch image %s", req)
 					fmt.Printf("http err: %s\n", err)
+					time.Sleep(10 * time.Second)
 				}
 				continue
 			}
@@ -116,7 +169,12 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 			defer fw.Close()
 
 			pr, pw := io.Pipe()
-			mw := io.MultiWriter(pw, bar)
+
+			if checksum != "" {
+				mw = io.MultiWriter(pw, bar, h)
+			} else {
+				mw = io.MultiWriter(pw, bar)
+			}
 			go func() error {
 				_, err := io.Copy(mw, res.Body)
 				if err != nil {
@@ -146,10 +204,19 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 				return err
 			}
 
+			if checksum != "" && checksum != fmt.Sprintf("%x", h.Sum(nil)) {
+				err = fmt.Errorf("checksum mismatch %s != %s", checksum, fmt.Sprintf("%x", h.Sum(nil)))
+				if debug {
+					fmt.Printf("%s\n", err.Error())
+					time.Sleep(10 * time.Second)
+				}
+				return err
+			}
+
 			return nil
 		}
 	}
-	return nil
+	return fmt.Errorf("failed to fetch image %s", err.Error())
 }
 
 func blkpart(dst string) error {

@@ -215,6 +215,10 @@ Network:
 	sync()
 
 	logComplete("install success")
+	if debug {
+		fmt.Printf("success waiting")
+		time.Sleep(5 * time.Second)
+	}
 	reboot()
 	return
 

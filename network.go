@@ -230,7 +230,9 @@ func networkAuto4(ifaces []string) (err error) {
 			}
 			addr, err := netlink.ParseAddr(ipnet.String())
 			exit_fail(err)
-
+			if debug {
+				fmt.Printf("set addr %s\n", ipnet.String())
+			}
 			exit_fail(netlink.AddrAdd(link, addr))
 
 			gw := net.IPv4(opts[3][0], opts[3][1], opts[3][2], opts[3][3])
