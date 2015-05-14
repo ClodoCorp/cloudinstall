@@ -1,6 +1,7 @@
 package main
 
 import (
+	"compress/gzip"
 	"crypto/md5"
 	"crypto/sha1"
 	"crypto/sha256"
@@ -14,12 +15,10 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"runtime"
 	"strconv"
 	"strings"
 	"time"
 
-	bgzf "github.com/biogo/hts/bgzf"
 	"github.com/cheggaaa/pb"
 	pgzip "github.com/klauspost/pgzip"
 	"github.com/vtolstov/go-ioctl"
@@ -187,15 +186,25 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 				//			defer pr.Close()
 			}()
 
-			gr, err = bgzf.NewReader(pr, runtime.NumCPU())
-			if err != nil {
-				gr, err = pgzip.NewReader(pr)
-				if err != nil {
+			//TODO: use ReaderAt, but we need to move from pipe reader =(
+			//			if gr, err = bgzf.NewReader(pr, runtime.NumCPU()); err != nil {
+			//			read:
+			if gr, err = pgzip.NewReader(pr); err != nil {
+				if gr, err = gzip.NewReader(pr); err != nil {
 					fmt.Printf("gz error: %s\n", err)
 					return err
 				}
 			}
-
+			/*
+				} else {
+					if ok, _ := pr.(io.ReaderAt); !ok {
+						goto read
+					}
+					if ok, err := bgzf.HasEOF(pr); !ok || err != nil {
+						goto read
+					}
+				}
+			*/
 			defer gr.Close()
 
 			_, err = io.Copy(fw, gr)
