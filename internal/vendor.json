@@ -22,38 +22,38 @@
 		{
 			"Vendor": "github.com/biogo/hts/bam",
 			"Local": "github.com/vtolstov/cloudbootstrap/internal/github.com/biogo/hts/bam",
-			"Version": "83c8f262df658a9628b677e98a26aa002423a8a4",
-			"VersionTime": "2015-03-17T13:03:23+10:30"
+			"Version": "6b0899206f45a1c18fe61ea15dfb718e355e136a",
+			"VersionTime": "2015-05-16T14:07:18+09:30"
 		},
 		{
 			"Vendor": "github.com/biogo/hts/bgzf",
 			"Local": "github.com/vtolstov/cloudbootstrap/internal/github.com/biogo/hts/bgzf",
-			"Version": "83c8f262df658a9628b677e98a26aa002423a8a4",
-			"VersionTime": "2015-03-17T13:03:23+10:30"
+			"Version": "6b0899206f45a1c18fe61ea15dfb718e355e136a",
+			"VersionTime": "2015-05-16T14:07:18+09:30"
 		},
 		{
 			"Vendor": "github.com/biogo/hts/bgzf/cache",
 			"Local": "github.com/vtolstov/cloudbootstrap/internal/github.com/biogo/hts/bgzf/cache",
-			"Version": "83c8f262df658a9628b677e98a26aa002423a8a4",
-			"VersionTime": "2015-03-17T13:03:23+10:30"
+			"Version": "6b0899206f45a1c18fe61ea15dfb718e355e136a",
+			"VersionTime": "2015-05-16T14:07:18+09:30"
 		},
 		{
 			"Vendor": "github.com/biogo/hts/bgzf/index",
 			"Local": "github.com/vtolstov/cloudbootstrap/internal/github.com/biogo/hts/bgzf/index",
-			"Version": "83c8f262df658a9628b677e98a26aa002423a8a4",
-			"VersionTime": "2015-03-17T13:03:23+10:30"
+			"Version": "6b0899206f45a1c18fe61ea15dfb718e355e136a",
+			"VersionTime": "2015-05-16T14:07:18+09:30"
 		},
 		{
 			"Vendor": "github.com/biogo/hts/internal",
 			"Local": "github.com/vtolstov/cloudbootstrap/internal/github.com/biogo/hts/internal",
-			"Version": "83c8f262df658a9628b677e98a26aa002423a8a4",
-			"VersionTime": "2015-03-17T13:03:23+10:30"
+			"Version": "6b0899206f45a1c18fe61ea15dfb718e355e136a",
+			"VersionTime": "2015-05-16T14:07:18+09:30"
 		},
 		{
 			"Vendor": "github.com/biogo/hts/sam",
 			"Local": "github.com/vtolstov/cloudbootstrap/internal/github.com/biogo/hts/sam",
-			"Version": "83c8f262df658a9628b677e98a26aa002423a8a4",
-			"VersionTime": "2015-03-17T13:03:23+10:30"
+			"Version": "6b0899206f45a1c18fe61ea15dfb718e355e136a",
+			"VersionTime": "2015-05-16T14:07:18+09:30"
 		},
 		{
 			"Vendor": "github.com/cheggaaa/pb",
@@ -64,8 +64,8 @@
 		{
 			"Vendor": "github.com/d2g/dhcp4",
 			"Local": "github.com/vtolstov/cloudbootstrap/internal/github.com/d2g/dhcp4",
-			"Version": "61547ddb021aefc77e2ca22787c50fdc74126dcc",
-			"VersionTime": "2013-12-18T11:54:48Z"
+			"Version": "f0e4d29ff0231dce36e250b2ed9ff08412584bca",
+			"VersionTime": "2015-04-13T11:30:26+01:00"
 		},
 		{
 			"Vendor": "github.com/d2g/dhcp4client",

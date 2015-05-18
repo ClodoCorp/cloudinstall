@@ -7,6 +7,8 @@ package sam
 import (
 	"bytes"
 	"flag"
+	"io"
+	"strings"
 	"testing"
 
 	"github.com/vtolstov/cloudbootstrap/internal/gopkg.in/check.v1"
@@ -200,7 +202,7 @@ r001	147	ref	37	30	9M	=	7	-39	CAGCGGCAT	*	NM:i:1
 			Seq:     NewSeq([]byte("GCCTAAGCTAA")),
 			Qual:    []uint8{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
 			AuxFields: []Aux{
-				mustAux(NewAux(NewTag("SA"), 'Z', "ref,29,-,6H5M,17,0;")),
+				mustAux(NewAux(NewTag("SA"), "ref,29,-,6H5M,17,0;")),
 			},
 		},
 		{
@@ -231,7 +233,7 @@ r001	147	ref	37	30	9M	=	7	-39	CAGCGGCAT	*	NM:i:1
 			Seq:     NewSeq([]byte("TAGGC")),
 			Qual:    []uint8{0xff, 0xff, 0xff, 0xff, 0xff},
 			AuxFields: []Aux{
-				mustAux(NewAux(NewTag("SA"), 'Z', "ref,9,+,5S6M,30,1;")),
+				mustAux(NewAux(NewTag("SA"), "ref,9,+,5S6M,30,1;")),
 			},
 		},
 		{
@@ -247,7 +249,7 @@ r001	147	ref	37	30	9M	=	7	-39	CAGCGGCAT	*	NM:i:1
 			Seq:     NewSeq([]byte("CAGCGGCAT")),
 			Qual:    []uint8{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
 			AuxFields: []Aux{
-				mustAux(NewAux(NewTag("NM"), 'i', uint(1))),
+				mustAux(NewAux(NewTag("NM"), uint(1))),
 			},
 		},
 	},
@@ -536,5 +538,66 @@ r001	147	ref	37	30	9M	=	7	-39	CAGCGGCAT	*	NM:i:1
 		}
 		c.Check(i.Error(), check.Equals, nil)
 		c.Check(n, check.Equals, 6)
+	}
+}
+
+var auxTests = []struct {
+	sam string
+
+	want []*Record
+}{
+	{
+		sam: `1f001i8gk#GGCG#AA	0	*	0	0	*	*	0	0	*	*	NH:i:2	HI:i:1	AS:i:13	nM:i:4	NM:i:4	MD:Z:2C0T2T1C13	jM:B:c,-1	jI:B:i,-1
+1f001i8gk#GGCG#AA	0	*	0	0	*	*	0	0	*	*	NH:i:2	HI:i:2	AS:i:12	nM:i:0	NM:i:0	MD:Z:22	jM:B:c,0	jI:B:i,629,1095
+`,
+		want: []*Record{
+			{
+				Name:    "1f001i8gk#GGCG#AA",
+				Pos:     -1,
+				MatePos: -1,
+				AuxFields: AuxFields{
+					mustAux(NewAux(NewTag("NH"), uint(2))),
+					mustAux(NewAux(NewTag("HI"), uint(1))),
+					mustAux(NewAux(NewTag("AS"), uint(13))),
+					mustAux(NewAux(NewTag("nM"), uint(4))),
+					mustAux(NewAux(NewTag("NM"), uint(4))),
+					mustAux(NewAux(NewTag("MD"), "2C0T2T1C13")),
+					mustAux(NewAux(NewTag("jM"), []int8{-1})),
+					mustAux(NewAux(NewTag("jI"), []int32{-1})),
+				},
+			},
+			{
+				Name:    "1f001i8gk#GGCG#AA",
+				Pos:     -1,
+				MatePos: -1,
+				AuxFields: AuxFields{
+					mustAux(NewAux(NewTag("NH"), uint(2))),
+					mustAux(NewAux(NewTag("HI"), uint(2))),
+					mustAux(NewAux(NewTag("AS"), uint(12))),
+					mustAux(NewAux(NewTag("nM"), uint(0))),
+					mustAux(NewAux(NewTag("NM"), uint(0))),
+					mustAux(NewAux(NewTag("MD"), "22")),
+					mustAux(NewAux(NewTag("jM"), []int8{0})),
+					mustAux(NewAux(NewTag("jI"), []int32{629, 1095})),
+				},
+			},
+		},
+	},
+}
+
+func (s *S) TestAux(c *check.C) {
+	for _, test := range auxTests {
+		sr, err := NewReader(strings.NewReader(test.sam))
+		c.Assert(err, check.Equals, nil)
+		var recs []*Record
+		for {
+			r, err := sr.Read()
+			if err != nil {
+				c.Assert(err, check.Equals, io.EOF)
+				break
+			}
+			recs = append(recs, r)
+		}
+		c.Check(recs, check.DeepEquals, test.want)
 	}
 }
