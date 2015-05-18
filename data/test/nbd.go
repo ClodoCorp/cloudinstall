@@ -17,7 +17,7 @@ import (
 	"runtime"
 	"time"
 
-	"code.google.com/p/biogo.bam/bgzf"
+	"github.com/vtolstov/cloudbootstrap/internal/code.google.com/p/biogo.bam/bgzf"
 
 	"github.com/vtolstov/go-nbd"
 )

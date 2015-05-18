@@ -15,12 +15,16 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
+	"runtime"
 	"strings"
 	"time"
 
-	"github.com/cheggaaa/pb"
-	pgzip "github.com/klauspost/pgzip"
+	"github.com/vtolstov/cloudbootstrap/internal/github.com/biogo/hts/bgzf"
+	"github.com/vtolstov/cloudbootstrap/internal/github.com/cheggaaa/pb"
+	pgzip "github.com/vtolstov/cloudbootstrap/internal/github.com/klauspost/pgzip"
+	compress "github.com/vtolstov/cloudbootstrap/internal/github.com/vtolstov/packer-post-processor-compress/compress"
+	ranger "github.com/vtolstov/cloudbootstrap/internal/github.com/vtolstov/ranger"
+	"github.com/vtolstov/cloudbootstrap/internal/gopkg.in/yaml.v2"
 	"github.com/vtolstov/go-ioctl"
 )
 
@@ -48,6 +52,7 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 	var h hash.Hash
 	var checksum string
 	var mw io.Writer
+	var bar io.Writer = ioutil.Discard
 
 	httpTransport := &http.Transport{
 		Dial:            (&net.Dialer{DualStack: true}).Dial,
@@ -114,11 +119,10 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 				}
 				continue
 			}
-			i, _ := strconv.Atoi(res.Header.Get("Content-Length"))
 
 			for _, ct := range []string{"md5", "sha1", "sha244", "sha256", "sha384", "sha512"} {
-				csum := fmt.Sprintf("%s/%s.%ssums", fetchaddr, img, ct)
-				cu, err := url.Parse(csum)
+				csumurl := fmt.Sprintf("%s/%s.%ssums", fetchaddr, img, ct)
+				cu, err := url.Parse(csumurl)
 				if err != nil {
 					if debug {
 						fmt.Printf("url err: %s", err)
@@ -135,17 +139,38 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 					h = getHash(ct)
 				}
 			}
+			metaurl := fmt.Sprintf("%s/%s.metadata", fetchaddr, img)
+			mu, err := url.Parse(metaurl)
+			if err != nil {
+				if debug {
+					fmt.Printf("url err: %s", err)
+					time.Sleep(5 * time.Second)
+				}
+				continue
+			}
 
-			bar := pb.New(i)
-			bar.ShowSpeed = true
-			bar.ShowTimeLeft = true
-			bar.ShowPercent = true
-			bar.SetRefreshRate(time.Second)
-			bar.SetWidth(80)
-			bar.SetMaxWidth(80)
-			bar.SetUnits(pb.U_BYTES)
-			bar.Start()
-			defer bar.Finish()
+			meta := compress.Metadata{}
+			req.URL = mu
+			res, err = httpClient.Do(req)
+			if err == nil && res.StatusCode == 200 {
+				metaBody, _ := ioutil.ReadAll(res.Body)
+				res.Body.Close()
+				yaml.Unmarshal(metaBody, &meta)
+			}
+
+			if meta[img].OrigSize != 0 {
+				b := pb.New(int(meta[img].OrigSize))
+				b.ShowSpeed = true
+				b.ShowTimeLeft = true
+				b.ShowPercent = true
+				b.SetRefreshRate(time.Second)
+				b.SetWidth(80)
+				b.SetMaxWidth(80)
+				b.SetUnits(pb.U_BYTES)
+				b.Start()
+				defer b.Finish()
+				bar = io.Writer(b)
+			}
 
 			req.Method = "GET"
 			req.URL = u
@@ -159,7 +184,8 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 				}
 				continue
 			}
-			defer res.Body.Close()
+			rs, err := ranger.NewReader(&ranger.HTTPRanger{URL: u})
+			//defer rs.Close()
 
 			fw, err := os.OpenFile(dev, os.O_WRONLY, 0600)
 			if err != nil {
@@ -167,47 +193,47 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 			}
 			defer fw.Close()
 
-			pr, pw := io.Pipe()
-
-			if checksum != "" {
-				mw = io.MultiWriter(pw, bar, h)
-			} else {
-				mw = io.MultiWriter(pw, bar)
-			}
-			go func() error {
-				_, err := io.Copy(mw, res.Body)
+			switch meta[img].CompType {
+			case "bgzf":
+				gr, err = bgzf.NewReader(rs, runtime.NumCPU())
+			case "pgzip":
+				gr, err = pgzip.NewReader(rs)
+			case "gzip":
+				gr, err = gzip.NewReader(rs)
+			default:
+				gr, err = bgzf.NewReader(rs, runtime.NumCPU())
 				if err != nil {
-					fmt.Printf("copy error: %s\n", err)
-					return err
-				}
-
-				defer pw.Close()
-				return nil
-				//			defer pr.Close()
-			}()
-
-			//TODO: use ReaderAt, but we need to move from pipe reader =(
-			//			if gr, err = bgzf.NewReader(pr, runtime.NumCPU()); err != nil {
-			//			read:
-			if gr, err = pgzip.NewReader(pr); err != nil {
-				if gr, err = gzip.NewReader(pr); err != nil {
-					fmt.Printf("gz error: %s\n", err)
-					return err
+					if gr, err = pgzip.NewReader(rs); err != nil {
+						if gr, err = gzip.NewReader(rs); err != nil {
+							fmt.Printf("gz error: %s\n", err)
+							return err
+						}
+					}
+				} else {
+					if ok, err := bgzf.HasEOF(rs); !ok || err != nil {
+						if gr, err = pgzip.NewReader(rs); err != nil {
+							if gr, err = gzip.NewReader(rs); err != nil {
+								fmt.Printf("gz error: %s\n", err)
+								return err
+							}
+						}
+					}
 				}
 			}
-			/*
-				} else {
-					if ok, _ := pr.(io.ReaderAt); !ok {
-						goto read
-					}
-					if ok, err := bgzf.HasEOF(pr); !ok || err != nil {
-						goto read
-					}
-				}
-			*/
+
+			if err != nil {
+				return err
+			}
+
 			defer gr.Close()
 
-			_, err = io.Copy(fw, gr)
+			if checksum != "" {
+				mw = io.MultiWriter(fw, bar, h)
+			} else {
+				mw = io.MultiWriter(fw, bar)
+			}
+
+			_, err = io.Copy(mw, gr)
 			if err != nil {
 				fmt.Printf("copy error: %s\n", err)
 				return err

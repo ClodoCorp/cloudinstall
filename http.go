@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v1"
+	"github.com/vtolstov/cloudbootstrap/internal/gopkg.in/yaml.v1"
 )
 
 func getDataSource() (dataSource DataSource, err error) {
