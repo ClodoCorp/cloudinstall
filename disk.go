@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"compress/gzip"
 	"crypto/md5"
 	"crypto/sha1"
@@ -131,10 +132,20 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 				}
 				req.URL = cu
 				res, err = httpClient.Do(req)
-				if err == nil && res.StatusCode == 200 {
-					checksumBody, _ := ioutil.ReadAll(res.Body)
+				if err == nil && res.StatusCode == 200 && res.Body != nil {
+					rd := bufio.NewReader(res.Body)
+				lines:
+					for {
+						line, err := rd.ReadString('\n')
+						if err != nil {
+							break lines
+						}
+						parts := strings.Fields(line)
+						if parts[1] == img {
+							checksum = parts[0]
+						}
+					}
 					res.Body.Close()
-					checksum = strings.Fields(string(checksumBody))[0]
 					h = getHash(ct)
 				}
 			}
@@ -151,16 +162,14 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 			req.URL = mu
 			res, err = httpClient.Do(req)
 			if err == nil && res.StatusCode == 200 && res.Body != nil {
-				fmt.Printf("TTTT")
 				metaBody, _ := ioutil.ReadAll(res.Body)
 				res.Body.Close()
 				if err = yaml.Unmarshal(metaBody, &meta); err != nil {
-					fmt.Printf("GGGGG")
 					fmt.Printf("metadata err %s\n", err.Error())
 				}
 			} else {
 				if debug && err != nil {
-					fmt.Printf("DDDDD %+v\n", err.Error())
+					fmt.Printf("meta: %s\n", err.Error())
 					time.Sleep(20 * time.Second)
 				}
 			}
@@ -228,9 +237,8 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 			case "gzip":
 				gr, err = gzip.NewReader(rs)
 			default:
-				gr, err = bgzf.NewReader(rs, runtime.NumCPU())
-				if err != nil {
-					if gr, err = pgzip.NewReader(rs); err != nil {
+				if gr, err = pgzip.NewReader(rs); err != nil {
+					if gr, err = bgzf.NewReader(rs, runtime.NumCPU()); err != nil {
 						if gr, err = gzip.NewReader(rs); err != nil {
 							fmt.Printf("gz error: %s\n", err)
 							return err

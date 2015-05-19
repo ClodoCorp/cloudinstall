@@ -158,18 +158,6 @@
 			"VersionTime": "2014-12-26T15:17:06+01:00"
 		},
 		{
-			"Vendor": "github.com/smartystreets/goconvey/convey",
-			"Local": "github.com/vtolstov/cloudbootstrap/internal/github.com/smartystreets/goconvey/convey",
-			"Version": "e4cef38b8924b3cff6d84a524e8fe938ad0bcbf2",
-			"VersionTime": "2014-08-28T18:36:00-06:00"
-		},
-		{
-			"Vendor": "github.com/smartystreets/goconvey/convey/assertions",
-			"Local": "github.com/vtolstov/cloudbootstrap/internal/github.com/smartystreets/goconvey/convey/assertions",
-			"Version": "e4cef38b8924b3cff6d84a524e8fe938ad0bcbf2",
-			"VersionTime": "2014-08-28T18:36:00-06:00"
-		},
-		{
 			"Vendor": "github.com/smartystreets/goconvey/convey/assertions/oglematchers",
 			"Local": "github.com/vtolstov/cloudbootstrap/internal/github.com/smartystreets/goconvey/convey/assertions/oglematchers",
 			"Version": "e4cef38b8924b3cff6d84a524e8fe938ad0bcbf2",
@@ -184,18 +172,6 @@
 		{
 			"Vendor": "github.com/smartystreets/goconvey/convey/assertions/ogletest",
 			"Local": "github.com/vtolstov/cloudbootstrap/internal/github.com/smartystreets/goconvey/convey/assertions/ogletest",
-			"Version": "e4cef38b8924b3cff6d84a524e8fe938ad0bcbf2",
-			"VersionTime": "2014-08-28T18:36:00-06:00"
-		},
-		{
-			"Vendor": "github.com/smartystreets/goconvey/convey/gotest",
-			"Local": "github.com/vtolstov/cloudbootstrap/internal/github.com/smartystreets/goconvey/convey/gotest",
-			"Version": "e4cef38b8924b3cff6d84a524e8fe938ad0bcbf2",
-			"VersionTime": "2014-08-28T18:36:00-06:00"
-		},
-		{
-			"Vendor": "github.com/smartystreets/goconvey/convey/reporting",
-			"Local": "github.com/vtolstov/cloudbootstrap/internal/github.com/smartystreets/goconvey/convey/reporting",
 			"Version": "e4cef38b8924b3cff6d84a524e8fe938ad0bcbf2",
 			"VersionTime": "2014-08-28T18:36:00-06:00"
 		},

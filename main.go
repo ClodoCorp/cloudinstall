@@ -86,7 +86,7 @@ Network:
 		}
 		goto Network
 	}
-
+	fmt.Printf("image installed %s\n", src)
 	ok, val := cmdlineVar("cloudinit")
 	if !ok || val == "false" {
 		exit_fail(blkpart(dst))
@@ -99,6 +99,9 @@ Network:
 			ostype = "bsd"
 		}
 
+		if debug {
+			fmt.Printf("ostype: %s\n", ostype)
+		}
 		var partstart string = "2048"
 		if len(parts) == 1 {
 			c = exec.Command("/bin/busybox", "fdisk", "-lu", dst)
@@ -132,7 +135,9 @@ Network:
 			if err = c.Wait(); err != nil || partstart == "" {
 				goto fail
 			}
-
+			if debug {
+				fmt.Printf("writing partition table\n")
+			}
 			switch ostype {
 			case "linux":
 				stdin.Write([]byte("o\nn\np\n1\n" + partstart + "\n\na\n1\nw\n"))
@@ -143,6 +148,10 @@ Network:
 				exit_fail(err)
 				stdin.Reset()
 				exit_fail(blkpart(dst))
+			}
+
+			if debug {
+				fmt.Printf("mouting file system\n")
 			}
 
 			switch ostype {
@@ -163,6 +172,10 @@ Network:
 
 				exit_fail(mount("sys", "/mnt/sys", "sysfs", 0, ""))
 
+				if debug {
+					fmt.Printf("resize file system\n")
+				}
+
 				switch fstype {
 				case "ext3", "ext4":
 					resize2fs, err := lookupPathChroot("resize2fs", "/mnt", []string{"/sbin", "/usr/sbin"})
@@ -181,6 +194,10 @@ Network:
 					c.SysProcAttr = chroot
 					_, err = c.CombinedOutput()
 					exit_fail(err)
+				}
+
+				if debug {
+					fmt.Printf("setting passwords\n")
 				}
 
 				for _, user := range cloudConfig.Users {
@@ -207,8 +224,10 @@ Network:
 					}
 				*/
 				exit_fail(unmount("/mnt/dev", syscall.MNT_DETACH))
-
+				exit_fail(unmount("/mnt/proc", syscall.MNT_DETACH))
+				exit_fail(unmount("/mnt/sys", syscall.MNT_DETACH))
 				exit_fail(unmount("/mnt", syscall.MNT_DETACH))
+
 			}
 		}
 	}
