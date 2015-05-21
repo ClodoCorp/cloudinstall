@@ -87,21 +87,21 @@ Network:
 		goto Network
 	}
 	fmt.Printf("image installed %s\n", src)
+	var ostype string = "linux"
+	if strings.Contains(cloudConfig.Bootstrap.Name, "bsd") {
+		ostype = "bsd"
+	}
+	if debug {
+		fmt.Printf("ostype: %s\n", ostype)
+	}
+
 	ok, val := cmdlineVar("cloudinit")
-	if !ok || val == "false" {
+	if !ok || val == "false" && ostype != "bsd" {
 		exit_fail(blkpart(dst))
 
 		parts, err := filepath.Glob("/dev/sda?")
 		exit_fail(err)
 
-		var ostype string = "linux"
-		if strings.Contains(cloudConfig.Bootstrap.Name, "bsd") {
-			ostype = "bsd"
-		}
-
-		if debug {
-			fmt.Printf("ostype: %s\n", ostype)
-		}
 		var partstart string = "2048"
 		if len(parts) == 1 {
 			c = exec.Command("/bin/busybox", "fdisk", "-lu", dst)

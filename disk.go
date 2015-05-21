@@ -213,7 +213,8 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 				continue
 			}
 
-			rs, err := ranger.NewReader(rf)
+			rs := res.Body
+			//			rs, err := ranger.NewReader(rf)
 			//			rs.BlockSize = 4 * 1024 * 1024
 			defer res.Body.Close()
 
