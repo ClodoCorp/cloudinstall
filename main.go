@@ -121,7 +121,9 @@ Network:
 				if err != nil {
 					break
 				}
-
+				if debug {
+					fmt.Printf("fdisk: %s\n", line)
+				}
 				if strings.HasPrefix(line, dst) {
 					ps := strings.Fields(line) // /dev/sda1      *      4096   251658239   125827072  83 Linux
 					if ps[1] == "*" {

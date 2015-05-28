@@ -131,6 +131,7 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 					continue
 				}
 				req.URL = cu
+				req.Method = "GET"
 				res, err = httpClient.Do(req)
 				if err == nil && res.StatusCode == 200 && res.Body != nil {
 					rd := bufio.NewReader(res.Body)
