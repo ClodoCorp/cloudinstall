@@ -40,11 +40,15 @@ func main() {
 
 	//	fmt.Print("\033[2J")
 
-	dst := "/dev/sda"
-
+	var dst string = "/dev/sda"
+	var ostype string = "linux"
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Printf("Recovered in %+v\n", r)
+			time.Sleep(10 * time.Second)
+			logFatal("install fail")
+			reboot()
+			return
 		}
 	}()
 
@@ -54,6 +58,9 @@ func main() {
 	stdin := new(bytes.Buffer)
 	chroot := &syscall.SysProcAttr{Chroot: "/mnt"}
 	var fstype string
+	cnt := 2
+	var ok bool
+	var val string
 
 Network:
 	for {
@@ -79,15 +86,20 @@ Network:
 	fmt.Printf("install image %s\n", src)
 	err = copyImage(src, dst, cloudConfig.Bootstrap.Fetch)
 	if err != nil {
+		cnt -= 1
 		logError(fmt.Sprintf("copy image err: %s\n", err))
 		if debug {
 			fmt.Printf("copy image err: %s\n", err)
 			time.Sleep(10 * time.Second)
 		}
-		goto Network
+		if cnt > 0 {
+			goto Network
+		} else {
+			goto fail
+		}
 	}
 	fmt.Printf("image installed %s\n", src)
-	var ostype string = "linux"
+
 	if strings.Contains(cloudConfig.Bootstrap.Name, "bsd") {
 		ostype = "bsd"
 	}
@@ -95,7 +107,7 @@ Network:
 		fmt.Printf("ostype: %s\n", ostype)
 	}
 
-	ok, val := cmdlineVar("cloudinit")
+	ok, val = cmdlineVar("cloudinit")
 	if !ok || val == "false" && ostype != "bsd" {
 		exit_fail(blkpart(dst))
 
@@ -121,9 +133,9 @@ Network:
 				if err != nil {
 					break
 				}
-				if debug {
-					fmt.Printf("fdisk: %s\n", line)
-				}
+				//				if debug {
+				//					fmt.Printf("fdisk: %s", line)
+				//				}
 				if strings.HasPrefix(line, dst) {
 					ps := strings.Fields(line) // /dev/sda1      *      4096   251658239   125827072  83 Linux
 					if ps[1] == "*" {
@@ -245,7 +257,6 @@ Network:
 
 fail:
 	logFatal("install fail")
-	time.Sleep(50 * time.Minute)
 	reboot()
 	return
 }

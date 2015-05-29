@@ -215,8 +215,6 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 			}
 
 			rs := res.Body
-			//			rs, err := ranger.NewReader(rf)
-			//			rs.BlockSize = 4 * 1024 * 1024
 			defer res.Body.Close()
 
 			fw, err := os.OpenFile(dev, os.O_WRONLY, 0600)
@@ -230,37 +228,35 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 				comptype = meta[img].CompType
 			}
 
+			pr, pw := io.Pipe()
+			var cmw io.Writer
+			if checksum != "" {
+				cmw = io.MultiWriter(pw, h)
+			} else {
+				cmw = io.MultiWriter(pw)
+			}
+
+			go func() {
+				io.Copy(cmw, rs)
+				pw.Close()
+			}()
+
 			switch comptype {
 			case "bgzf":
-				gr, err = bgzf.NewReader(rs, runtime.NumCPU())
-				//				rs.BlockSize = bgzf.MaxBlockSize
+				gr, err = bgzf.NewReader(pr, runtime.NumCPU())
 			case "pgzip":
-				gr, err = pgzip.NewReader(rs)
+				gr, err = pgzip.NewReader(pr)
 			case "gzip":
-				gr, err = gzip.NewReader(rs)
+				gr, err = gzip.NewReader(pr)
 			default:
-				if gr, err = pgzip.NewReader(rs); err != nil {
-					if gr, err = bgzf.NewReader(rs, runtime.NumCPU()); err != nil {
-						if gr, err = gzip.NewReader(rs); err != nil {
+				if gr, err = pgzip.NewReader(pr); err != nil {
+					if gr, err = bgzf.NewReader(pr, runtime.NumCPU()); err != nil {
+						if gr, err = gzip.NewReader(pr); err != nil {
 							fmt.Printf("gz error: %s\n", err)
 							return err
 						}
 					}
 				}
-				/*else {
-
-					//	if ok, err := bgzf.HasEOF(rs); !ok || err != nil {
-					if gr, err = pgzip.NewReader(rs); err != nil {
-						if gr, err = gzip.NewReader(rs); err != nil {
-							fmt.Printf("gz error: %s\n", err)
-							return err
-						}
-					}
-					//	} else {
-					//						rs.BlockSize = bgzf.MaxBlockSize
-					//	}
-				}
-				*/
 			}
 
 			if err != nil {
@@ -270,10 +266,6 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 			defer gr.Close()
 			writers := []io.Writer{fw}
 
-			if checksum != "" {
-				writers = append(writers, h)
-			}
-
 			if len(meta) > 0 {
 				if m, ok := meta[img]; ok && m.OrigSize != 0 {
 					writers = append(writers, bar)
@@ -281,23 +273,20 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 			}
 
 			mw = io.MultiWriter(writers...)
-
-			//			n, err = io.Copy(mw, gr)
 			io.Copy(mw, gr)
-			//			if err != nil && n != meta[img].OrigSize && checksum != "" && checksum != fmt.Sprintf("%x", h.Sum(nil)) {
-			//				fmt.Printf("copy error: %s %d\n", err, n)
-			//				return err
-			//			}
 
-			if checksum != "" && checksum != fmt.Sprintf("%x", h.Sum(nil)) {
-				err = fmt.Errorf("checksum mismatch %s != %s", checksum, fmt.Sprintf("%x", h.Sum(nil)))
-				if debug {
-					fmt.Printf("%s\n", err.Error())
-					time.Sleep(10 * time.Second)
+			if checksum != "" {
+				if checksum != fmt.Sprintf("%x", h.Sum(nil)) {
+					err = fmt.Errorf("checksum mismatch %s != %s", checksum, fmt.Sprintf("%x", h.Sum(nil)))
+					if debug {
+						fmt.Printf("%s\n", err.Error())
+						time.Sleep(10 * time.Second)
+					}
+					return err
+				} else {
+					fmt.Printf("checksum ok %s == %s\n", checksum, fmt.Sprintf("%x", h.Sum(nil)))
 				}
-				return err
 			}
-
 			return nil
 		}
 	}
