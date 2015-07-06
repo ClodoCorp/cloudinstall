@@ -221,6 +221,7 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 			if err != nil {
 				return err
 			}
+			//TODO: check for error
 			defer fw.Close()
 
 			comptype := ""
@@ -237,6 +238,7 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 			}
 
 			go func() {
+				//TODO: chck for error
 				io.Copy(cmw, rs)
 				pw.Close()
 			}()
