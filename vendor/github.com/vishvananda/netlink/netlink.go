@@ -11,7 +11,7 @@ package netlink
 import (
 	"net"
 
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/vishvananda/netlink/nl"
+	"github.com/vishvananda/netlink/nl"
 )
 
 const (

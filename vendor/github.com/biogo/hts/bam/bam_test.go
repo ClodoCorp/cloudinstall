@@ -16,12 +16,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/biogo/hts/bgzf"
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/biogo/hts/bgzf/index"
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/biogo/hts/internal"
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/biogo/hts/sam"
+	"github.com/biogo/hts/bgzf"
+	"github.com/biogo/hts/bgzf/index"
+	"github.com/biogo/hts/internal"
+	"github.com/biogo/hts/sam"
 
-	"github.com/vtolstov/cloudbootstrap/internal/gopkg.in/check.v1"
+	"gopkg.in/check.v1"
 )
 
 var (

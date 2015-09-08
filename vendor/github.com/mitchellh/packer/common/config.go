@@ -2,8 +2,8 @@ package common
 
 import (
 	"fmt"
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/mitchellh/mapstructure"
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/mitchellh/packer/packer"
+	"github.com/mitchellh/mapstructure"
+	"github.com/mitchellh/packer/packer"
 	"net/url"
 	"os"
 	"path/filepath"

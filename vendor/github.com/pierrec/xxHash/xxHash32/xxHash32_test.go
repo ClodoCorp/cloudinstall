@@ -1,7 +1,7 @@
 package xxHash32_test
 
 import (
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/pierrec/xxHash/xxHash32"
+	"github.com/pierrec/xxHash/xxHash32"
 	"hash/crc32"
 	"hash/fnv"
 	"testing"

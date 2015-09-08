@@ -2,7 +2,7 @@ package check_test
 
 import (
 	"errors"
-	"github.com/vtolstov/cloudbootstrap/internal/gopkg.in/check.v1"
+	"gopkg.in/check.v1"
 	"reflect"
 	"runtime"
 )

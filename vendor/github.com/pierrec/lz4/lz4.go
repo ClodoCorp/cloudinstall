@@ -21,7 +21,7 @@ import (
 	"hash"
 	"sync"
 
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/pierrec/xxHash/xxHash32"
+	"github.com/pierrec/xxHash/xxHash32"
 )
 
 const (

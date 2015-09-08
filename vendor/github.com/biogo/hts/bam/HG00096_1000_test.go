@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/biogo/hts/sam"
+	"github.com/biogo/hts/sam"
 )
 
 var headerHG00096_1000 *sam.Header

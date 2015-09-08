@@ -6,8 +6,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/mitchellh/multistep"
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/mitchellh/packer/packer"
+	"github.com/mitchellh/multistep"
+	"github.com/mitchellh/packer/packer"
 )
 
 // StepDownload downloads a remote file using the download client within

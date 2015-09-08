@@ -10,7 +10,7 @@ import (
 	"io"
 	"sort"
 
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/biogo/hts/bgzf"
+	"github.com/biogo/hts/bgzf"
 )
 
 // ReadIndex reads the Index from the given io.Reader.

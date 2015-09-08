@@ -8,7 +8,7 @@ package cache
 import (
 	"sync"
 
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/biogo/hts/bgzf"
+	"github.com/biogo/hts/bgzf"
 )
 
 var (

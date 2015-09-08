@@ -12,12 +12,12 @@ import (
 	"runtime"
 	"strings"
 
-	bgzf "github.com/vtolstov/cloudbootstrap/internal/github.com/biogo/hts/bgzf"
-	pgzip "github.com/vtolstov/cloudbootstrap/internal/github.com/klauspost/pgzip"
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/mitchellh/packer/common"
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/mitchellh/packer/packer"
-	lz4 "github.com/vtolstov/cloudbootstrap/internal/github.com/pierrec/lz4"
-	"github.com/vtolstov/cloudbootstrap/internal/gopkg.in/yaml.v2"
+	bgzf "github.com/biogo/hts/bgzf"
+	pgzip "github.com/klauspost/pgzip"
+	"github.com/mitchellh/packer/common"
+	"github.com/mitchellh/packer/packer"
+	lz4 "github.com/pierrec/lz4"
+	"gopkg.in/yaml.v2"
 )
 
 type Metadata map[string]Metaitem

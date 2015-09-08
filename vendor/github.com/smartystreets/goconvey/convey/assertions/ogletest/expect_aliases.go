@@ -19,7 +19,7 @@ import (
 	"path"
 	"runtime"
 
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/smartystreets/goconvey/convey/assertions/oglematchers"
+	"github.com/smartystreets/goconvey/convey/assertions/oglematchers"
 )
 
 func getCallerForAlias() (fileName string, lineNumber int) {

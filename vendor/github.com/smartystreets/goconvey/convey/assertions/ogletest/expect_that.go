@@ -21,7 +21,7 @@ import (
 	"reflect"
 	"runtime"
 
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/smartystreets/goconvey/convey/assertions/oglematchers"
+	"github.com/smartystreets/goconvey/convey/assertions/oglematchers"
 )
 
 // ExpectationResult is an interface returned by ExpectThat that allows callers

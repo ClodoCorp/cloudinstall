@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/mitchellh/go-fs"
+	"github.com/mitchellh/go-fs"
 	"unicode"
 )
 

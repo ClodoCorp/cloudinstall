@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"io"
 	"unsafe"
-	. "github.com/vtolstov/cloudbootstrap/internal/github.com/smartystreets/goconvey/convey/assertions/oglematchers"
-	. "github.com/vtolstov/cloudbootstrap/internal/github.com/smartystreets/goconvey/convey/assertions/ogletest"
+	. "github.com/smartystreets/goconvey/convey/assertions/oglematchers"
+	. "github.com/smartystreets/goconvey/convey/assertions/ogletest"
 )
 
 ////////////////////////////////////////////////////////////////////////

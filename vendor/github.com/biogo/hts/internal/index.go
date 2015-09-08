@@ -9,7 +9,7 @@ import (
 	"errors"
 	"sort"
 
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/biogo/hts/bgzf"
+	"github.com/biogo/hts/bgzf"
 )
 
 const (

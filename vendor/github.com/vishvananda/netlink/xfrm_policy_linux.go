@@ -3,7 +3,7 @@ package netlink
 import (
 	"syscall"
 
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/vishvananda/netlink/nl"
+	"github.com/vishvananda/netlink/nl"
 )
 
 func selFromPolicy(sel *nl.XfrmSelector, policy *XfrmPolicy) {

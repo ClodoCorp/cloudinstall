@@ -2,10 +2,10 @@ package common
 
 import (
 	"fmt"
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/mitchellh/go-fs"
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/mitchellh/go-fs/fat"
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/mitchellh/multistep"
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/mitchellh/packer/packer"
+	"github.com/mitchellh/go-fs"
+	"github.com/mitchellh/go-fs/fat"
+	"github.com/mitchellh/multistep"
+	"github.com/mitchellh/packer/packer"
 	"io"
 	"io/ioutil"
 	"log"

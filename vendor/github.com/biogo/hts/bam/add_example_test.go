@@ -9,7 +9,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/biogo/hts/bam"
+	"github.com/biogo/hts/bam"
 )
 
 func ExampleIndex_Add() {

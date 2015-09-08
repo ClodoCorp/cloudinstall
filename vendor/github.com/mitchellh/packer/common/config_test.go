@@ -2,7 +2,7 @@ package common
 
 import (
 	"fmt"
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/mitchellh/mapstructure"
+	"github.com/mitchellh/mapstructure"
 	"io/ioutil"
 	"os"
 	"path/filepath"

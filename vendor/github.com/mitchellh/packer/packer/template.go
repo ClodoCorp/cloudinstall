@@ -10,9 +10,9 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/hashicorp/go-version"
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/mitchellh/mapstructure"
-	jsonutil "github.com/vtolstov/cloudbootstrap/internal/github.com/mitchellh/packer/common/json"
+	"github.com/hashicorp/go-version"
+	"github.com/mitchellh/mapstructure"
+	jsonutil "github.com/mitchellh/packer/common/json"
 )
 
 // The rawTemplate struct represents the structure of a template read

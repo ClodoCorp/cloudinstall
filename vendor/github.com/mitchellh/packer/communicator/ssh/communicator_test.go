@@ -4,9 +4,9 @@ package ssh
 
 import (
 	"bytes"
-	"github.com/vtolstov/cloudbootstrap/internal/code.google.com/p/go.crypto/ssh"
+	"code.google.com/p/go.crypto/ssh"
 	"fmt"
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/mitchellh/packer/packer"
+	"github.com/mitchellh/packer/packer"
 	"net"
 	"testing"
 )

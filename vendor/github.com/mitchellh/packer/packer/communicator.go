@@ -1,7 +1,7 @@
 package packer
 
 import (
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/mitchellh/iochan"
+	"github.com/mitchellh/iochan"
 	"io"
 	"os"
 	"strings"

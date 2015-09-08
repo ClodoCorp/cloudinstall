@@ -2,7 +2,7 @@ package fat
 
 import (
 	"fmt"
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/mitchellh/go-fs"
+	"github.com/mitchellh/go-fs"
 	"strings"
 	"time"
 )

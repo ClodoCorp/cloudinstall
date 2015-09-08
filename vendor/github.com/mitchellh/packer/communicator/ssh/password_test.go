@@ -1,7 +1,7 @@
 package ssh
 
 import (
-	"github.com/vtolstov/cloudbootstrap/internal/code.google.com/p/go.crypto/ssh"
+	"code.google.com/p/go.crypto/ssh"
 	"reflect"
 	"testing"
 )

@@ -2,8 +2,8 @@ package common
 
 import (
 	"bytes"
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/mitchellh/multistep"
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/mitchellh/packer/packer"
+	"github.com/mitchellh/multistep"
+	"github.com/mitchellh/packer/packer"
 	"io/ioutil"
 	"os"
 	"path"

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/vtolstov/cloudbootstrap/internal/gopkg.in/check.v1"
+	"gopkg.in/check.v1"
 )
 
 var (

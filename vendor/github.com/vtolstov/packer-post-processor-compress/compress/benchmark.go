@@ -12,9 +12,9 @@ import (
 	"runtime"
 	"testing"
 
-	bgzf "github.com/vtolstov/cloudbootstrap/internal/github.com/biogo/hts/bgzf"
-	pgzip "github.com/vtolstov/cloudbootstrap/internal/github.com/klauspost/pgzip"
-	lz4 "github.com/vtolstov/cloudbootstrap/internal/github.com/pierrec/lz4"
+	bgzf "github.com/biogo/hts/bgzf"
+	pgzip "github.com/klauspost/pgzip"
+	lz4 "github.com/pierrec/lz4"
 )
 
 type Compressor struct {

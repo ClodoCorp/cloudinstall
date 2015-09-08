@@ -1,6 +1,6 @@
 package fat
 
-import "github.com/vtolstov/cloudbootstrap/internal/github.com/mitchellh/go-fs"
+import "github.com/mitchellh/go-fs"
 
 // FATType is a simple enum of the available FAT filesystem types.
 type FATType uint8

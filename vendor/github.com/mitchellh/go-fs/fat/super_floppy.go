@@ -3,7 +3,7 @@ package fat
 import (
 	"errors"
 	"fmt"
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/mitchellh/go-fs"
+	"github.com/mitchellh/go-fs"
 	"time"
 )
 

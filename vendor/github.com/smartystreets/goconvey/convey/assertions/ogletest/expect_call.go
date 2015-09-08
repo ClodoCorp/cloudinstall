@@ -18,7 +18,7 @@ package ogletest
 import (
 	"runtime"
 
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/smartystreets/goconvey/convey/assertions/oglemock"
+	"github.com/smartystreets/goconvey/convey/assertions/oglemock"
 )
 
 // ExpectCall expresses an expectation that the method of the given name

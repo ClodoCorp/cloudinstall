@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/biogo/hts/internal"
+	"github.com/biogo/hts/internal"
 )
 
 // Record represents a SAM/BAM record.

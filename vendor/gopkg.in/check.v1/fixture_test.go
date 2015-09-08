@@ -3,7 +3,7 @@
 package check_test
 
 import (
-	. "github.com/vtolstov/cloudbootstrap/internal/gopkg.in/check.v1"
+	. "gopkg.in/check.v1"
 )
 
 // -----------------------------------------------------------------------

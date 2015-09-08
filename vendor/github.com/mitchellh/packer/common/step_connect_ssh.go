@@ -1,12 +1,12 @@
 package common
 
 import (
-	gossh "github.com/vtolstov/cloudbootstrap/internal/code.google.com/p/go.crypto/ssh"
+	gossh "code.google.com/p/go.crypto/ssh"
 	"errors"
 	"fmt"
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/mitchellh/multistep"
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/mitchellh/packer/communicator/ssh"
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/mitchellh/packer/packer"
+	"github.com/mitchellh/multistep"
+	"github.com/mitchellh/packer/communicator/ssh"
+	"github.com/mitchellh/packer/packer"
 	"log"
 	"strings"
 	"time"

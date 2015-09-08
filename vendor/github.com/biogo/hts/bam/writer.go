@@ -11,8 +11,8 @@ import (
 	"errors"
 	"io"
 
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/biogo/hts/bgzf"
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/biogo/hts/sam"
+	"github.com/biogo/hts/bgzf"
+	"github.com/biogo/hts/sam"
 )
 
 // Writer implements BAM data writing.

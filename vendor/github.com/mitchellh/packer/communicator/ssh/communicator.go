@@ -3,10 +3,10 @@ package ssh
 import (
 	"bufio"
 	"bytes"
-	"github.com/vtolstov/cloudbootstrap/internal/code.google.com/p/go.crypto/ssh"
+	"code.google.com/p/go.crypto/ssh"
 	"errors"
 	"fmt"
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/mitchellh/packer/packer"
+	"github.com/mitchellh/packer/packer"
 	"io"
 	"io/ioutil"
 	"log"

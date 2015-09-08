@@ -3,7 +3,7 @@ package xxHash32_test
 import (
 	"bytes"
 	"fmt"
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/pierrec/xxHash/xxHash32"
+	"github.com/pierrec/xxHash/xxHash32"
 )
 
 func ExampleNew() {

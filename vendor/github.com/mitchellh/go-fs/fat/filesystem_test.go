@@ -1,7 +1,7 @@
 package fat
 
 import (
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/mitchellh/go-fs"
+	"github.com/mitchellh/go-fs"
 	"testing"
 )
 

@@ -12,7 +12,7 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/vtolstov/cloudbootstrap/internal/golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 func ExampleNewServerConn() {
