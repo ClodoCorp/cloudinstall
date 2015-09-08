@@ -20,12 +20,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/biogo/hts/bgzf"
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/cheggaaa/pb"
-	pgzip "github.com/vtolstov/cloudbootstrap/internal/github.com/klauspost/pgzip"
-	compress "github.com/vtolstov/cloudbootstrap/internal/github.com/vtolstov/packer-post-processor-compress/compress"
-	ranger "github.com/vtolstov/cloudbootstrap/internal/github.com/vtolstov/ranger"
-	"github.com/vtolstov/cloudbootstrap/internal/gopkg.in/yaml.v2"
+	"github.com/biogo/hts/bgzf"
+	"github.com/cheggaaa/pb"
+	pgzip "github.com/klauspost/pgzip"
+	compress "github.com/vtolstov/packer-post-processor-compress/compress"
+	ranger "github.com/vtolstov/ranger"
+	"gopkg.in/yaml.v2"
 	"github.com/vtolstov/go-ioctl"
 )
 
@@ -219,6 +219,8 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 
 			fw, err := os.OpenFile(dev, os.O_WRONLY, 0600)
 			if err != nil {
+				fmt.Printf("open err: %s\n", err)
+				time.Sleep(10 * time.Second)
 				return err
 			}
 			//TODO: check for error
@@ -239,8 +241,16 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 
 			go func() {
 				//TODO: chck for error
-				io.Copy(cmw, rs)
-				pw.Close()
+				_, err := io.Copy(cmw, rs)
+				if err != nil {
+					fmt.Printf("copy err: %s\n", err)
+					time.Sleep(10 * time.Second)
+				}
+				err = pw.Close()
+				if err != nil {
+					fmt.Printf("close err: %s\n", err)
+					time.Sleep(10 * time.Second)
+				}
 			}()
 
 			switch comptype {

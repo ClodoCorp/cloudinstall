@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/d2g/dhcp4"
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/d2g/dhcp4client"
-	"github.com/vtolstov/cloudbootstrap/internal/github.com/vishvananda/netlink"
+	"github.com/d2g/dhcp4"
+	"github.com/d2g/dhcp4client"
+	"github.com/vishvananda/netlink"
 )
 
 var ipv4 bool = false
