@@ -1,9 +1,10 @@
-cloud-bootstrap
+cloud-install
 ===============
 
 build:
 
 ```
-GOPATH=$(pwd)/third_party/ go build -a -x -o cloud-bootstrap
+make x86_64
+make x86_32
 ```
 
