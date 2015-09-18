@@ -23,10 +23,10 @@ import (
 	"github.com/biogo/hts/bgzf"
 	"github.com/cheggaaa/pb"
 	pgzip "github.com/klauspost/pgzip"
+	"github.com/vtolstov/go-ioctl"
 	compress "github.com/vtolstov/packer-post-processor-compress/compress"
 	ranger "github.com/vtolstov/ranger"
 	"gopkg.in/yaml.v2"
-	"github.com/vtolstov/go-ioctl"
 )
 
 func getHash(t string) hash.Hash {
@@ -108,6 +108,7 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 			}
 
 			req, _ := http.NewRequest("HEAD", src, nil)
+			req.Header.Set("Host", host)
 			req.URL = u
 			req.URL.Host = net.JoinHostPort(addr.String(), port)
 			req.Host = host
