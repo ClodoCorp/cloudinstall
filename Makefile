@@ -6,12 +6,12 @@ x86_64:
 	@echo Building
 	@tmp=`mktemp --tmpdir -d`; \
 	trap 'rm -rf "$$tmp";' EXIT SIGINT SIGQUIT ;\
-	rm -f "$(CURDIR)/output-x86_64" ;\
+	rm -rf "$(CURDIR)/output-x86_64 $(CURDIR)/gopath" ;\
 	mkdir -p "$${tmp}/etc" "$${tmp}/bin" "$(CURDIR)/output" ;\
 	touch "$${tmp}/etc/resolv.conf" ;\
 	cp data/busybox-x86_64 "$${tmp}/bin/busybox" ;\
 	cp data/init "$${tmp}/init" ;\
-	bash -c "env GOPATH=$(CURDIR) GO15VENDOREXPERIMENT=1 CGO_ENABLED=0 go build -a -o \"$${tmp}/init2\"" ;\
+	$(CURDIR)/build x86_64 "$${tmp}/init2" ;\
 	cp -f data/vmlinuz-*-x86_64 "$(CURDIR)/output/kernel-x86_64" ;\
 	pushd "$${tmp}/" >/dev/null;\
 	find . | cpio -H newc -o 2>/dev/null | gzip > "$(CURDIR)/output/initrd-x86_64";\
@@ -26,7 +26,7 @@ x86_32:
 	touch "$${tmp}/etc/resolv.conf" ;\
 	cp data/busybox-x86_32 "$${tmp}/bin/busybox" ;\
 	cp data/init "$${tmp}/init" ;\
-	bash -c "env GOPATH=$(CURDIR) GO15VENDOREXPERIMENT=1 CGO_ENABLED=0 GOARCH=386 go build -a -o \"$${tmp}/init2\"" ;\
+	$(CURDIR)/build x86_32 "$${tmp}/init2" ;\
 	cp -f data/vmlinuz-*-x86_32 "$(CURDIR)/output/kernel-x86_32" ;\
 	pushd "$${tmp}/" >/dev/null;\
 	find . | cpio -H newc -o 2>/dev/null | gzip > "$(CURDIR)/output/initrd-x86_32";\

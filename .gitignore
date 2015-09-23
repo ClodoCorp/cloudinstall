@@ -5,3 +5,4 @@ third_party/pkg/*
 third_party/src/**/.git
 third_party/src/**/.gitignore
 cloudbootstrap
+gopath/
