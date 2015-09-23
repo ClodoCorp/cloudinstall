@@ -1,4 +1,13 @@
-#!/bin/bash -xe
+#!/bin/bash -x
+
+go version | grep -q go1.5
+
+if [ "x$?" != "x0" ]; then
+    wget https://storage.googleapis.com/golang/go1.5.1.linux-amd64.tar.gz -O go.tar.gz
+    mkdir -p goroot gopath; tar -C goroot -xf go.tar.gz
+    rm -f go.tar.gz
+    export PATH=$PATH:$(pwd)/goroot/go/bin
+fi
 
 export GO15VENDOREXPERIMENT=1
 export GOPATH=$(pwd)/gopath
@@ -18,3 +27,5 @@ elif [ "x$1" = "xx86_32" ]; then
 fi
 
 go build -x -tags netgo -o $2 ${REPO_PATH}
+
+test -e $2 || exit 255;
