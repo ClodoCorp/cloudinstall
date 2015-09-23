@@ -6,7 +6,7 @@ if [ "x$?" != "x0" ]; then
     wget https://storage.googleapis.com/golang/go1.5.1.linux-amd64.tar.gz -O go.tar.gz
     mkdir -p goroot gopath; tar -C goroot -xf go.tar.gz
     rm -f go.tar.gz
-    export PATH=$PATH:$(pwd)/goroot/go/bin
+    export PATH=$(pwd)/goroot/go/bin:$PATH
 fi
 
 export GO15VENDOREXPERIMENT=1
