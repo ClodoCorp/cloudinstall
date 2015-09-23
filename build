@@ -3,11 +3,11 @@
 go version | grep -q go1.5
 
 if [ "x$?" != "x0" ]; then
-    export GOROOT=$(pwd)/goroot
+    export GOROOT=$(pwd)/goroot/go
     wget https://storage.googleapis.com/golang/go1.5.1.linux-amd64.tar.gz -O go.tar.gz
     mkdir -p ${GOROOT}; tar -C ${GOROOT} -xf go.tar.gz
     rm -f go.tar.gz
-    export PATH=$(pwd)/goroot/go/bin:$PATH
+    export PATH=${GOROOT}/bin:$PATH
 fi
 
 export GO15VENDOREXPERIMENT=1
