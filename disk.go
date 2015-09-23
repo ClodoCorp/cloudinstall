@@ -25,7 +25,6 @@ import (
 	pgzip "github.com/klauspost/pgzip"
 	"github.com/vtolstov/go-ioctl"
 	compress "github.com/vtolstov/packer-post-processor-compress/compress"
-	ranger "github.com/vtolstov/ranger"
 	"gopkg.in/yaml.v2"
 )
 
@@ -209,12 +208,13 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 				}
 				continue
 			}
-			rf := &ranger.HTTPRanger{URL: u}
-			if err = rf.Initialize(0); err != nil {
-				fmt.Printf("rf err %s\n", err.Error())
-				continue
-			}
-
+			/*
+				rf := &ranger.HTTPRanger{URL: u}
+				if err = rf.Initialize(0); err != nil {
+					fmt.Printf("rf err %s\n", err.Error())
+					continue
+				}
+			*/
 			rs := res.Body
 			defer res.Body.Close()
 
