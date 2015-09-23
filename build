@@ -1,4 +1,4 @@
-#!/bin/sh -xe
+#!/bin/bash -xe
 
 export GO15VENDOREXPERIMENT=1
 export GOPATH=$(pwd)/gopath
@@ -11,9 +11,9 @@ mkdir -p ${GOPATH}/src/${ORG_PATH}
 ln -sv ../../../.. ${GOPATH}/src/${REPO_PATH}
 
 export GOOS=linux
-if [ "x$1" == "xx86_64" ]; then
+if [ "x$1" = "xx86_64" ]; then
    export GOARCH=amd64
-elif [ "x$1" == "xx86_32" ]; then
+elif [ "x$1" = "xx86_32" ]; then
    export GOARCH=386
 fi
 
