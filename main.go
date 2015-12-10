@@ -86,7 +86,7 @@ Network:
 	fmt.Printf("install image %s\n", src)
 	err = copyImage(src, dst, cloudConfig.Bootstrap.Fetch)
 	if err != nil {
-		cnt -= 1
+		cnt--
 		logError(fmt.Sprintf("copy image err: %s\n", err))
 		if debug {
 			fmt.Printf("copy image err: %s\n", err)

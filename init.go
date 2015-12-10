@@ -11,7 +11,7 @@ import (
 
 var (
 	cmdline []string
-	debug   bool = false
+	debug   = false
 )
 
 func init() {

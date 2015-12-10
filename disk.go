@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"compress/gzip"
 	"crypto/md5"
 	"crypto/sha1"
@@ -22,6 +23,7 @@ import (
 
 	"github.com/biogo/hts/bgzf"
 	"github.com/cheggaaa/pb"
+	"github.com/cloudflare/golibs/bytepool"
 	pgzip "github.com/klauspost/pgzip"
 	"github.com/vtolstov/go-ioctl"
 	compress "github.com/vtolstov/packer-post-processor-compress/compress"
@@ -47,7 +49,65 @@ func getHash(t string) hash.Hash {
 	return h
 }
 
+type zeroSkipWriter struct {
+	w    io.Writer
+	bp   *bytepool.BytePool
+	pos  int64
+	zero []byte
+}
+
+const (
+	bsize = 4096
+)
+
+func ZeroSkipWriter(w io.Writer) io.WriteCloser {
+	zsw := &zeroSkipWriter{w: w}
+	zsw.bp = new(bytepool.BytePool)
+	zsw.bp.Init(time.Second, 65536)
+	zsw.zero = zsw.bp.Get(bsize)
+	return zsw
+}
+
+func (w *zeroSkipWriter) Write(p []byte) (n int, err error) {
+	l := len(p)
+	bcount := 1
+	start := 0
+
+	if l > bsize {
+		bcount = l / bsize
+	}
+
+	for i := 0; i < bcount; i++ {
+		if bytes.Equal(p[start:start+bsize], w.zero) {
+			_, err = w.w.(io.WriteSeeker).Seek(w.pos+int64(bsize), os.SEEK_SET)
+			if err != nil {
+				return 0, err
+			}
+		} else {
+			n, err = w.w.Write(p[start : start+bsize])
+			if err != nil {
+				return
+			}
+			if n != bsize {
+				err = io.ErrShortWrite
+				return
+			}
+		}
+		w.pos += int64(bsize)
+		start += bsize
+	}
+
+	return l, nil
+}
+
+func (w *zeroSkipWriter) Close() error {
+	w.bp.Put(w.zero)
+	w.bp.Close()
+	return nil
+}
+
 func copyImage(img string, dev string, fetchaddrs []string) (err error) {
+
 	var gr io.ReadCloser
 	var h hash.Hash
 	var checksum string
@@ -224,8 +284,10 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 				time.Sleep(10 * time.Second)
 				return err
 			}
-			//TODO: check for error
 			defer fw.Close()
+			zsw := ZeroSkipWriter(fw)
+			defer zsw.Close()
+			//TODO: check for error
 
 			comptype := ""
 			if len(meta) > 0 {
@@ -277,7 +339,7 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 			}
 
 			defer gr.Close()
-			writers := []io.Writer{fw}
+			writers := []io.Writer{zsw}
 
 			if len(meta) > 0 {
 				if m, ok := meta[img]; ok && m.OrigSize != 0 {

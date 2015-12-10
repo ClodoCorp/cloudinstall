@@ -12,8 +12,10 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
-var ipv4 bool = false
-var ipv6 bool = false
+var (
+	ipv4 = false
+	ipv6 = false
+)
 
 func configNetwork() (err error) {
 
