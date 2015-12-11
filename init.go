@@ -91,4 +91,7 @@ func init() {
 	*/
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
+
+	// set deadline scheduler
+	ioutil.WriteFile("/sys/block/sda/queue/scheduler", []byte("deadline\n"), os.FileMode(0644))
 }
