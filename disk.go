@@ -70,7 +70,7 @@ func ZeroSkipWriter(w io.Writer) io.WriteCloser {
 
 func (w *zeroSkipWriter) Write(p []byte) (n int, err error) {
 	l := len(p)
-	bcount := 1
+	bcount := 0
 	start := 0
 
 	if l > bsize {
@@ -95,6 +95,18 @@ func (w *zeroSkipWriter) Write(p []byte) (n int, err error) {
 		}
 		w.pos += int64(bsize)
 		start += bsize
+	}
+
+	if l > start {
+		n, err = w.w.Write(p[start:])
+		if err != nil {
+			return
+		}
+		if n != len(p[start:]) {
+			err = io.ErrShortWrite
+			return
+		}
+		w.pos += int64(n)
 	}
 
 	return l, nil
