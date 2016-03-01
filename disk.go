@@ -131,7 +131,7 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 		Dial:            (&net.Dialer{DualStack: true}).Dial,
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
-	httpClient := &http.Client{Transport: httpTransport, Timeout: 5 * time.Minute}
+	httpClient := &http.Client{Transport: httpTransport}
 
 	var host string
 	var port string

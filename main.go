@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -80,6 +81,17 @@ Network:
 			continue
 		}
 		break Network
+	}
+
+	if cloudConfig.Bootstrap.Timeout != "" {
+		if dt, err := time.ParseDuration(cloudConfig.Bootstrap.Timeout); err == nil {
+			go func() {
+				time.Sleep(dt)
+				logFatal("install fail by timeout")
+				reboot()
+				os.Exit(1)
+			}()
+		}
 	}
 
 	src := fmt.Sprintf("%s-%s-%s", cloudConfig.Bootstrap.Name, cloudConfig.Bootstrap.Version, cloudConfig.Bootstrap.Arch)
@@ -171,7 +183,7 @@ Network:
 			switch ostype {
 			case "linux":
 				for _, fs := range []string{"ext4", "btrfs"} {
-					err = mount("/dev/sda1", "/mnt", fs, syscall.MS_RELATIME, "data=writeback,discard,barrier=0")
+					err = mount("/dev/sda1", "/mnt", fs, syscall.MS_RELATIME, "data=writeback,barrier=0")
 					if err != nil {
 						continue
 					}

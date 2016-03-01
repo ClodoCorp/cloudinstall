@@ -12,6 +12,7 @@ type Bootstrap struct {
 	Fetch    []string `yaml:"fetch"`
 	Version  string   `yaml:"version"`
 	Resize   bool     `yaml:"resize,omitempty"`
+	Timeout  string   `yaml:"timeout,omitempty"`
 	Software []struct {
 		Name    string `yaml:"name,omitempty"`
 		Version string `yaml:"version,omitempty"`
