@@ -4,9 +4,9 @@ goversion=$(go version)
 arch="$1"
 
 if [ "x$(echo $goversion | grep devel | wc -l)" != "x1" -a "x$(echo $goversion | grep -E "1\.5|1\.6" | wc -l)" != "x1" ]; then
-    export GOROOT=$(pwd)/goroot/
+    export GOROOT=$(pwd)/goroot/go
     wget https://storage.googleapis.com/golang/go1.6.linux-amd64.tar.gz -O go.tar.gz
-    mkdir -p ${GOROOT}; tar -C ${GOROOT} -xf go.tar.gz
+    mkdir -p ${GOROOT}; tar -C $(pwd)/goroot/ -xf go.tar.gz
     rm -f go.tar.gz
     export PATH=${GOROOT}/bin:$PATH
 fi
