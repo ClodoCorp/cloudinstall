@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	//	"golang.org/x/net/icmp"
+
 	"github.com/d2g/dhcp4"
 	"github.com/d2g/dhcp4client"
 	"github.com/vishvananda/netlink"
@@ -97,9 +99,25 @@ func networkIfacesUp(ifaces []string) (err error) {
 }
 
 func networkAuto6(ifaces []string) error {
+	/*
+		var buffer []byte
+		conn, err := icmp.ListenPacket("ip6:58", "::")
+		if err != nil {
+			return err
+		}
+		defer conn.Close()
 
+		go func() {
+			for {
+				conn.SetDeadline(time.Now().Add(15 * time.Second))
+				n, _, _ := conn.ReadFrom(buffer)
+				if n > 0 {
+
+				}
+			}
+		}()
+	*/
 	exit_fail(networkIfacesUp(ifaces))
-	exit_fail(ioutil.WriteFile("/etc/resolv.conf", []byte(fmt.Sprintf("nameserver 2001:4860:4860::8888\nnameserver 2001:4860:4860::8844\n")), 0644))
 
 	for _, ifname := range ifaces {
 		iface, err := net.InterfaceByName(ifname)
@@ -117,7 +135,8 @@ func networkAuto6(ifaces []string) error {
 				if strings.HasPrefix(a, "fe80") {
 					continue
 				}
-				exit_fail(ioutil.WriteFile("/etc/resolv.conf", []byte(fmt.Sprintf("nameserver 2001:4860:4860::8888\nnameserver 2001:4860:4860::8844\n")), 0644))
+				//nameserver
+				break
 			}
 		}
 	}

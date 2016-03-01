@@ -1,6 +1,7 @@
-#!/bin/bash -x
+#!/bin/bash -e
 
 goversion=$(go version)
+arch="$1"
 
 if [ "x$(echo $goversion | grep devel | wc -l)" != "x0" -a "x$(echo $goversion | grep -E "1\.5|1\.6" | wc -l)" != "x0" ]; then
     export GOROOT=$(pwd)/goroot/go
@@ -17,15 +18,24 @@ export REPO_PATH=${ORG_PATH}/cloudinstall
 rm -rf ${GOPATH}
 mkdir -p ${GOPATH}/src/${ORG_PATH}
 
-ln -sv ../../../.. ${GOPATH}/src/${REPO_PATH}
+ln -s ../../../.. ${GOPATH}/src/${REPO_PATH}
 
 export GOOS=linux
-if [ "x$1" = "xx86_64" ]; then
+if [ "x${arch}" = "xx86_64" ]; then
    export GOARCH=amd64
-elif [ "x$1" = "xx86_32" ]; then
+elif [ "x${arch}" = "xx86_32" ]; then
    export GOARCH=386
 fi
 
-go build -x -tags netgo -o $2 ${REPO_PATH}
-
-test -e $2 || exit 255;
+curdir=$(pwd)
+tmp=$(mktemp --tmpdir -d)
+rm -f "${curdir}/output/*-${arch}"
+mkdir -p "${tmp}/etc" "${tmp}/bin" "$(pwd)/output"
+touch "${tmp}/etc/resolv.conf"
+cp ${curdir}/data/busybox-${arch} "${tmp}/bin/busybox"
+cp ${curdir}/data/init "${tmp}/init"
+go build -v -tags netgo -o "${tmp}/init2" ${REPO_PATH}
+cp -f ${curdir}/data/vmlinuz-*-x86_32 "${curdir}/output/kernel-${arch}"
+pushd "${tmp}/" >/dev/null
+find . | cpio -H newc -o 2>/dev/null | gzip > "${curdir}/output/initrd-${arch}"
+popd >/dev/null
