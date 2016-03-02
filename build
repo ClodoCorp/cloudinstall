@@ -30,12 +30,13 @@ fi
 curdir=$(pwd)
 tmp=$(mktemp --tmpdir -d)
 rm -f "${curdir}/output/*-${arch}"
-mkdir -p "${tmp}/etc" "${tmp}/bin" "$(pwd)/output"
+mkdir -p "${tmp}/etc" "${tmp}/bin" "${curdir}/output"
 touch "${tmp}/etc/resolv.conf"
-cp ${curdir}/data/busybox-${arch} "${tmp}/bin/busybox"
-cp ${curdir}/data/init "${tmp}/init"
+cp -v "${curdir}/data/busybox-${arch}" "${tmp}/bin/busybox"
+cp -v "${curdir}/data/init" "${tmp}/init"
 go build -v -tags netgo -o "${tmp}/init2" ${REPO_PATH}
-cp -f ${curdir}/data/vmlinuz-*-x86_32 "${curdir}/output/kernel-${arch}"
+cp -f "${curdir}"/data/vmlinuz-*-${arch} "${curdir}/output/kernel-${arch}"
 pushd "${tmp}/" >/dev/null
 find . | cpio -H newc -o 2>/dev/null | gzip > "${curdir}/output/initrd-${arch}"
 popd >/dev/null
+rm -rf "${tmp}"
