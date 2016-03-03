@@ -35,7 +35,11 @@ touch "${tmp}/etc/resolv.conf"
 cp -v "${curdir}/data/busybox-${arch}" "${tmp}/bin/busybox"
 cp -v "${curdir}/data/init" "${tmp}/init"
 go build -v -tags netgo -o "${tmp}/init2" ${REPO_PATH}
-cp -f "${curdir}"/data/vmlinuz-*-${arch} "${curdir}/output/kernel-${arch}"
+if [ "x${arch}" = "xx86_64" ]; then
+    cp -f "${curdir}"/data/vmlinuz-4.4.3-${arch} "${curdir}/output/kernel-${arch}"
+else
+    cp -f "${curdir}"/data/vmlinuz-3.18.3-${arch} "${curdir}/output/kernel-${arch}"
+fi
 pushd "${tmp}/" >/dev/null
 find . | cpio -H newc -o 2>/dev/null | gzip > "${curdir}/output/initrd-${arch}"
 popd >/dev/null
