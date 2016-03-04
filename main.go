@@ -115,12 +115,16 @@ Network:
 	if strings.Contains(cloudConfig.Bootstrap.Name, "bsd") {
 		ostype = "bsd"
 	}
+	if strings.Contains(cloudConfig.Bootstrap.Name, "ispdn") {
+		ostype = "ispdn"
+	}
+
 	if debug {
 		fmt.Printf("ostype: %s\n", ostype)
 	}
 
 	ok, val = cmdlineVar("cloudinit")
-	if !ok || val == "false" && ostype != "bsd" {
+	if !ok || val == "false" && ostype == "linux" {
 		exit_fail(blkpart(dst))
 
 		parts, err := filepath.Glob("/dev/sda?")
