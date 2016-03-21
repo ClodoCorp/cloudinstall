@@ -214,8 +214,10 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 							break lines
 						}
 						parts := strings.Fields(line)
-						if parts[1] == img {
-							checksum = parts[0]
+						if len(parts) > 1 {
+							if parts[1] == img {
+								checksum = parts[0]
+							}
 						}
 					}
 					res.Body.Close()
