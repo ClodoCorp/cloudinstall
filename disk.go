@@ -217,6 +217,7 @@ func copyImage(img string, dev string, fetchaddrs []string) (err error) {
 						if len(parts) > 1 {
 							if parts[1] == img {
 								checksum = parts[0]
+								break lines
 							}
 						}
 					}
