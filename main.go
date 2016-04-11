@@ -178,14 +178,11 @@ Network:
 				exit_fail(err)
 				stdin.Reset()
 				exit_fail(blkpart(dst))
-			}
 
-			if debug {
-				fmt.Printf("mouting file system\n")
-			}
+				if debug {
+					fmt.Printf("mouting file system\n")
+				}
 
-			switch ostype {
-			case "linux":
 				for _, fs := range []string{"ext4", "btrfs"} {
 					err = mount("/dev/sda1", "/mnt", fs, syscall.MS_RELATIME, "data=writeback,barrier=0")
 					if err != nil {
@@ -202,21 +199,11 @@ Network:
 
 				exit_fail(mount("sys", "/mnt/sys", "sysfs", 0, ""))
 
-				if debug {
-					fmt.Printf("resize file system\n")
-				}
-
 				switch fstype {
-				case "ext3", "ext4":
-					resize2fs, err := lookupPathChroot("resize2fs", "/mnt", []string{"/sbin", "/usr/sbin"})
-					exit_fail(err)
-
-					c = exec.Command(resize2fs, "/dev/sda1")
-					c.Dir = "/"
-					c.SysProcAttr = chroot
-					_, err = c.CombinedOutput()
-					exit_fail(err)
 				case "btrfs":
+					if debug {
+						fmt.Printf("resize file system\n")
+					}
 					btrfs, err := lookupPathChroot("btrfs", "/mnt", []string{"/sbin", "/usr/sbin"})
 					exit_fail(err)
 					c = exec.Command(btrfs, "filesystem", "resize", "max", "/")
@@ -224,6 +211,9 @@ Network:
 					c.SysProcAttr = chroot
 					_, err = c.CombinedOutput()
 					exit_fail(err)
+					if debug {
+						fmt.Printf("resize success\n")
+					}
 				}
 
 				if debug {
@@ -257,7 +247,21 @@ Network:
 				exit_fail(unmount("/mnt/proc", syscall.MNT_DETACH))
 				exit_fail(unmount("/mnt/sys", syscall.MNT_DETACH))
 				exit_fail(unmount("/mnt", syscall.MNT_DETACH))
-
+				switch fstype {
+				case "ext3", "ext4":
+					if debug {
+						fmt.Printf("resize file system\n")
+					}
+					c = exec.Command("/bin/resize2fs", "/dev/sda1")
+					output, err := c.CombinedOutput()
+					if debug {
+						fmt.Printf("resize status: %s\n", output)
+					}
+					exit_fail(err)
+					if debug {
+						fmt.Printf("resize success\n")
+					}
+				}
 			}
 		}
 	}

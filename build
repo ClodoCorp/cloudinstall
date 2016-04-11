@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash 
 
 goversion=$(go version)
 arch="$1"
@@ -33,6 +33,7 @@ rm -f "${curdir}/output/*-${arch}"
 mkdir -p "${tmp}/etc" "${tmp}/bin" "${curdir}/output"
 touch "${tmp}/etc/resolv.conf"
 cp -v "${curdir}/data/busybox-${arch}" "${tmp}/bin/busybox"
+cp -v "${curdir}/data/resize2fs-${arch}" "${tmp}/bin/resize2fs"
 cp -v "${curdir}/data/init" "${tmp}/init"
 go build -v -tags netgo -o "${tmp}/init2" ${REPO_PATH}
 if [ "x${arch}" = "xx86_64" ]; then
@@ -43,4 +44,4 @@ fi
 pushd "${tmp}/" >/dev/null
 find . | cpio -H newc -o 2>/dev/null | gzip > "${curdir}/output/initrd-${arch}"
 popd >/dev/null
-rm -rf "${tmp}"
+#rm -rf "${tmp}"
